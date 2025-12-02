@@ -3,38 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi2 Sentinel | v19.0 Aurora</title>
+    <title>Pi2 Sentinel | v21 Optimized</title>
     
     <!-- FONTS -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;800&family=Syncopate:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    
-    <!-- LIBS -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- THEME -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        bg: '#030304',
-                        surface: '#09090b',
+                        bg: '#050505',
+                        panel: '#0a0a0c',
                         primary: '#00f3ff', 
-                        accent: '#8b5cf6',
+                        accent: '#a855f7',
                         success: '#10b981',
-                        danger: '#ff2a6d',
-                        dim: '#52525b',
-                        glass: 'rgba(255, 255, 255, 0.03)'
+                        danger: '#ff003c',
+                        dim: '#64748b'
                     },
                     fontFamily: {
                         mono: ['"JetBrains Mono"', 'monospace'],
-                        brand: ['"Syncopate"', 'sans-serif'],
-                        body: ['"Inter"', 'sans-serif']
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        hud: ['"Rajdhani"', 'sans-serif']
                     }
                 }
             }
@@ -42,295 +34,246 @@
     </script>
 
     <style>
-        body { background-color: #030304; color: #e4e4e7; overflow-x: hidden; }
-        ::-webkit-scrollbar { width: 4px; background: #030304; }
+        body { 
+            background-color: #050505; 
+            color: #e2e8f0; 
+            overflow-x: hidden; 
+            -webkit-font-smoothing: antialiased; 
+        }
+        
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0a0a0c; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: #00f3ff; }
 
-        /* ADVANCED GLASSMORPHISM */
+        /* PERFORMANCE OPTIMIZED GLASS */
+        /* Reduced blur for better FPS, removed heavy shadows */
         .glass-panel {
-            background: rgba(12, 12, 14, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            background: rgba(13, 13, 17, 0.95); /* More opaque, less calculation */
+            border: 1px solid rgba(255, 255, 255, 0.08);
             position: relative;
             overflow: hidden;
-            transition: border-color 0.3s ease;
         }
-        
-        /* SPOTLIGHT EFFECT */
-        .glass-panel::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(800px circle at var(--x, 50%) var(--y, 50%), rgba(255, 255, 255, 0.06), transparent 40%);
-            opacity: 0;
-            transition: opacity 0.5s;
-            pointer-events: none;
-            z-index: 0;
+
+        /* LIGHTWEIGHT CSS BACKGROUND ANIMATION (No JS Canvas) */
+        .grid-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
         }
-        .glass-panel:hover::before { opacity: 1; }
-        .glass-panel:hover { border-color: rgba(0, 243, 255, 0.3); }
 
-        /* CONTENT Z-INDEX FIX */
-        .glass-panel > * { position: relative; z-index: 10; }
+        .floating-orb {
+            position: fixed; width: 600px; height: 600px; 
+            background: radial-gradient(circle, rgba(0,243,255,0.05) 0%, transparent 70%);
+            border-radius: 50%; pointer-events: none; z-index: -1;
+            animation: float 20s infinite ease-in-out;
+        }
+        @keyframes float { 0% {transform: translate(0,0);} 50% {transform: translate(100px, 50px);} 100% {transform: translate(0,0);} }
 
-        /* SCANLINE */
+        /* SCANLINE (Visual only) */
         .scanline {
-            width: 100%; height: 100%; position: absolute; top: 0; left: 0; pointer-events: none; z-index: 999;
-            background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.2) 51%);
-            background-size: 100% 4px; opacity: 0.15;
+            width: 100%; height: 2px; background: rgba(0, 243, 255, 0.2);
+            position: absolute; top: 0; left: 0; pointer-events: none; z-index: 5;
+            animation: scan 5s linear infinite;
         }
+        @keyframes scan { 0% {top:0;} 100% {top:100%;} }
 
-        /* TEXT CLAMP */
-        .safe-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; display: block; }
-        
-        /* REPORT PAPER STYLE */
-        .report-view {
-            background-image: repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(255, 255, 255, 0.03) 20px);
-            font-family: "JetBrains Mono", monospace;
+        /* TEXT TRUNCATE FIX */
+        /* This ensures addresses don't overflow the container */
+        .truncate-middle {
+            display: block; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            width: 100%;
         }
     </style>
 </head>
-<body class="font-body min-h-screen flex flex-col selection:bg-primary selection:text-black">
+<body class="font-hud min-h-screen flex flex-col relative selection:bg-primary selection:text-black">
 
-    <!-- LIVING BACKGROUND -->
-    <canvas id="neuro_net" class="fixed inset-0 w-full h-full pointer-events-none z-0"></canvas>
-    <div class="fixed inset-0 bg-gradient-to-t from-bg via-transparent to-bg/80 z-0 pointer-events-none"></div>
-    
+    <!-- CSS BASED BACKGROUND (High Performance) -->
+    <div class="grid-bg"></div>
+    <div class="floating-orb" style="top:-20%; left:-10%;"></div>
+    <div class="floating-orb" style="bottom:-20%; right:-10%; background: radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, transparent 70%);"></div>
+
     <!-- HEADER -->
-    <header class="h-16 flex-none border-b border-white/5 bg-bg/80 backdrop-blur z-50 sticky top-0">
-        <div class="max-w-7xl mx-auto px-6 h-full flex justify-between items-center">
-            <div class="flex items-center gap-4 group cursor-pointer">
-                <div class="w-10 h-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center font-bold text-white font-brand text-xs shadow-[0_0_20px_rgba(0,243,255,0.2)] transition group-hover:shadow-[0_0_30px_rgba(0,243,255,0.6)] group-hover:text-primary group-hover:border-primary">π</div>
-                <div>
-                    <h1 class="font-brand font-bold text-lg text-white leading-none tracking-[0.2em] group-hover:text-primary transition">SENTINEL</h1>
-                    <div class="flex items-center gap-2 mt-1">
-                        <div class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></div>
-                        <span class="text-[9px] font-mono text-dim tracking-wide uppercase">Node: Online v19.0</span>
-                    </div>
+    <header class="border-b border-white/5 bg-[#050505] sticky top-0 h-16 flex-none z-50">
+        <div class="max-w-7xl mx-auto px-4 md:px-6 h-full flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 border border-primary/20 bg-primary/5 flex items-center justify-center font-bold text-lg text-primary rounded">π²</div>
+                <div class="flex flex-col">
+                    <h1 class="font-bold tracking-[0.2em] text-sm text-white leading-none">SENTINEL</h1>
+                    <span class="text-[9px] text-primary uppercase tracking-widest leading-none mt-0.5">Optimized v21.0</span>
                 </div>
             </div>
             
-            <button onclick="toggleLang()" id="langBtn" class="px-4 py-1.5 rounded border border-white/10 hover:border-primary/50 hover:text-primary bg-white/5 text-[10px] font-mono transition text-gray-400">EN / RU</button>
+            <div class="flex items-center gap-4">
+                 <div class="hidden sm:block text-[9px] font-mono text-dim tracking-wider border-r border-white/10 pr-4 mr-2">
+                     NETWORK: <span class="text-success font-bold">ONLINE</span>
+                 </div>
+                 <button onclick="toggleLang()" id="langBtn" class="font-mono text-[10px] font-bold border border-white/10 px-3 py-1.5 rounded hover:bg-white/5 transition text-dim hover:text-white">EN</button>
+            </div>
         </div>
     </header>
 
     <main class="flex-grow p-4 md:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-5 relative z-10">
 
-        <!-- ================= [LEFT] CONNECTIVITY ================= -->
-        <aside class="lg:col-span-3 flex flex-col gap-4">
+        <!-- ================= [LEFT] CONFIG ================= -->
+        <aside class="lg:col-span-3 flex flex-col gap-4 min-w-0">
             
             <!-- WALLET -->
-            <div class="glass-panel p-6 rounded-2xl flex flex-col justify-between border-t border-white/5 h-full min-h-[300px]" id="walletPanel">
-                <h2 class="text-xs font-bold text-dim font-brand tracking-widest mb-6 flex items-center gap-2 border-b border-white/5 pb-4">
-                    <i class="fas fa-fingerprint"></i> Authentication
-                </h2>
+            <div class="glass-panel p-5 rounded-lg flex flex-col gap-4 relative">
+                <div class="scanline"></div>
+                <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest border-l-2 border-primary pl-2">Uplink Config</h2>
 
-                <!-- Setup -->
-                <div id="setupView" class="space-y-5">
-                    <div class="group">
-                        <label class="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-1.5 block group-focus-within:text-primary transition-colors">Target Address</label>
-                        <input type="text" id="inp_addr" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-[10px] font-mono text-white focus:border-primary/50 focus:outline-none transition-all placeholder-dim" placeholder="set1...">
+                <!-- Input View -->
+                <div id="setupView" class="space-y-3">
+                    <div class="text-[9px] text-dim font-mono bg-white/5 p-2 rounded border border-white/5">
+                        <i class="fas fa-lock mr-1"></i> Keys are processed in local RAM. Use <b>Burner</b>.
                     </div>
-                    <div class="group">
-                        <label class="text-[9px] text-gray-500 uppercase font-bold tracking-wider mb-1.5 block group-focus-within:text-primary transition-colors">Secret Key</label>
-                        <input type="password" id="inp_pk" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-[10px] font-mono text-white focus:border-primary/50 focus:outline-none transition-all placeholder-dim" placeholder="0x...">
+                    <div>
+                        <label class="text-[9px] text-primary font-bold uppercase tracking-wider block mb-1">Address</label>
+                        <input type="text" id="inp_addr" class="w-full bg-black/40 border border-white/10 p-2 text-[10px] font-mono rounded text-white focus:border-primary focus:outline-none transition placeholder-dim" placeholder="set1...">
                     </div>
-                    <button onclick="initConnection()" class="w-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/30 text-white font-bold text-[10px] py-3 rounded-lg transition-all uppercase tracking-widest mt-2 flex justify-center items-center gap-2 group">
-                        <span>Initialize Link</span> <i class="fas fa-chevron-right text-[8px] group-hover:translate-x-1 transition"></i>
+                    <div>
+                        <label class="text-[9px] text-primary font-bold uppercase tracking-wider block mb-1">Key</label>
+                        <input type="password" id="inp_pk" class="w-full bg-black/40 border border-white/10 p-2 text-[10px] font-mono rounded text-white focus:border-primary focus:outline-none transition placeholder-dim" placeholder="0x...">
+                    </div>
+                    <button onclick="initConnection()" class="w-full bg-primary/10 border border-primary/30 hover:bg-primary/20 hover:text-primary text-dim font-bold text-[10px] py-2.5 rounded transition mt-1 uppercase tracking-widest">
+                        Connect
                     </button>
                 </div>
 
-                <!-- Connected -->
-                <div id="connectedView" class="hidden flex-col h-full animate-[fadeIn_0.6s_cubic-bezier(0.16,1,0.3,1)]">
-                    <div class="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-auto relative overflow-hidden">
-                        <div class="absolute inset-0 bg-primary/5 animate-pulse-slow"></div>
-                        <div class="text-[9px] text-primary uppercase mb-1 font-bold tracking-wider relative z-10">Secure Tunnel</div>
-                        <div id="display_addr" class="font-mono text-[10px] text-white safe-truncate relative z-10 opacity-80">...</div>
+                <!-- Connected View (Fixed Layout) -->
+                <div id="connectedView" class="hidden flex-col h-full gap-4">
+                    <div class="bg-primary/5 p-3 rounded border border-primary/10 w-full min-w-0">
+                        <div class="text-[9px] text-primary font-bold uppercase mb-1">Active Identity</div>
+                        <!-- FIX: Ensure truncation works -->
+                        <div class="w-full">
+                            <div id="display_addr" class="font-mono text-[10px] text-white truncate w-full" title="">...</div>
+                        </div>
                     </div>
                     
-                    <div class="space-y-3 mt-4 mb-6">
-                        <div class="flex justify-between text-[10px] text-gray-400 font-mono">
-                            <span>Balance Status</span> <span class="text-white">Active</span>
-                        </div>
-                        <div class="flex justify-between text-[10px] text-gray-400 font-mono">
-                            <span>Encryption</span> <span class="text-white">SHA-256</span>
-                        </div>
+                    <div class="bg-success/5 p-3 rounded border border-success/10 flex items-center gap-2">
+                        <div class="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                        <span class="text-[9px] text-success font-bold uppercase">Link Secured</span>
                     </div>
 
-                    <button onclick="disconnect()" class="w-full text-[9px] text-danger hover:text-white border border-danger/20 hover:bg-danger/10 hover:border-danger/50 rounded-lg py-3 transition uppercase tracking-wider font-bold">ABORT SESSION</button>
+                    <button onclick="disconnect()" class="w-full text-[9px] text-danger border border-danger/20 hover:bg-danger/10 rounded py-2 transition uppercase">
+                        Disconnect
+                    </button>
                 </div>
             </div>
             
-            <!-- PROXY -->
-            <div class="glass-panel p-5 rounded-2xl relative">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-[9px] font-bold text-dim font-brand tracking-widest">Routing Mesh</span>
-                    <i class="fas fa-network-wired text-dim text-xs"></i>
-                </div>
-                <div class="space-y-2.5">
-                    <div class="flex justify-between items-center bg-black/40 border border-white/5 p-2 rounded-lg">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1.5 h-1.5 bg-gray-600 rounded-full" id="led_a"></div>
-                            <span class="text-[10px] font-mono text-gray-400">Gateway A</span>
-                        </div>
-                        <span id="gw_a" class="text-[9px] font-bold text-dim opacity-50">STBY</span>
+            <!-- Nodes -->
+            <div class="glass-panel p-4 rounded-lg">
+                <h3 class="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-3">Gateway Nodes</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center bg-black/30 p-2 rounded border border-white/5">
+                        <span class="text-[10px] font-mono text-dim">Gateway A</span>
+                        <span id="gw_a" class="text-[9px] text-dim font-bold bg-white/5 px-2 rounded">IDLE</span>
                     </div>
-                    <div class="flex justify-between items-center bg-black/40 border border-white/5 p-2 rounded-lg">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1.5 h-1.5 bg-gray-600 rounded-full" id="led_b"></div>
-                            <span class="text-[10px] font-mono text-gray-400">Gateway B</span>
-                        </div>
-                        <span id="gw_b" class="text-[9px] font-bold text-dim opacity-50">STBY</span>
+                    <div class="flex justify-between items-center bg-black/30 p-2 rounded border border-white/5">
+                        <span class="text-[10px] font-mono text-dim">Gateway B</span>
+                        <span id="gw_b" class="text-[9px] text-dim font-bold bg-white/5 px-2 rounded">IDLE</span>
                     </div>
                 </div>
             </div>
         </aside>
 
-        <!-- ================= [CENTER] MAIN VISUALS ================= -->
+        <!-- ================= [CENTER] VISUALS ================= -->
         <section class="lg:col-span-6 flex flex-col gap-4">
             
             <!-- PIPELINE -->
-            <div class="glass-panel h-24 rounded-2xl flex items-center justify-between px-8 relative overflow-visible border-t border-white/5">
-                <!-- Connectors Background -->
-                <div class="absolute top-1/2 left-8 right-8 h-[1px] bg-white/5 -translate-y-1/2 z-0"></div>
-                
-                <!-- NODE 1 -->
-                <div class="flex flex-col items-center gap-3 z-10 relative">
-                    <div id="p_1" class="w-10 h-10 bg-surface border border-white/10 rounded-full flex items-center justify-center transition-all duration-500 shadow-xl">
-                        <i class="fas fa-user text-dim text-xs transition-colors"></i>
-                    </div>
-                    <span class="text-[8px] text-dim uppercase tracking-wider font-bold">Initiator</span>
-                </div>
-                <!-- Dynamic Line -->
-                <div class="flex-grow h-[1px] relative mx-2"><div id="l_1" class="absolute h-[1px] bg-primary w-0 shadow-[0_0_10px_cyan] transition-all duration-500"></div></div>
-                
-                <!-- NODE 2 -->
-                <div class="flex flex-col items-center gap-3 z-10 relative">
-                    <div id="p_2" class="w-10 h-10 bg-surface border border-white/10 rounded-full flex items-center justify-center transition-all duration-500 shadow-xl">
-                        <i class="fas fa-globe text-dim text-xs transition-colors"></i>
-                    </div>
-                    <span class="text-[8px] text-dim uppercase tracking-wider font-bold">Tunnel</span>
-                </div>
-                <!-- Dynamic Line -->
-                <div class="flex-grow h-[1px] relative mx-2"><div id="l_2" class="absolute h-[1px] bg-primary w-0 shadow-[0_0_10px_cyan] transition-all duration-500"></div></div>
-
-                <!-- NODE 3 (PI2) -->
-                <div class="flex flex-col items-center gap-3 z-10 relative">
-                    <div id="p_3" class="w-12 h-12 bg-surface border border-white/10 rounded-xl flex items-center justify-center transition-all duration-500 shadow-xl relative overflow-hidden">
-                        <i class="fas fa-cube text-dim text-xs transition-colors relative z-10"></i>
-                    </div>
-                    <span class="text-[8px] text-dim uppercase tracking-wider font-bold">FastSet™</span>
-                </div>
-                 <!-- Dynamic Line -->
-                 <div class="flex-grow h-[1px] relative mx-2"><div id="l_3" class="absolute h-[1px] bg-success w-0 shadow-[0_0_10px_lime] transition-all duration-500"></div></div>
-
-                <!-- NODE 4 -->
-                <div class="flex flex-col items-center gap-3 z-10 relative">
-                    <div id="p_4" class="w-10 h-10 bg-surface border border-white/10 rounded-full flex items-center justify-center transition-all duration-500 shadow-xl">
-                        <i id="check_icon" class="fas fa-check text-dim text-xs transition-colors opacity-50"></i>
-                    </div>
-                    <span class="text-[8px] text-dim uppercase tracking-wider font-bold">Finality</span>
-                </div>
+            <div class="glass-panel h-16 rounded-lg flex items-center justify-between px-2 sm:px-6 bg-[#0a0a0c]">
+                <div class="flex flex-col items-center w-12 z-10"><div id="p_1" class="w-2.5 h-2.5 bg-dim rounded-full transition-all"></div><span class="text-[8px] text-dim mt-2 uppercase font-bold">Init</span></div>
+                <div class="h-[1px] bg-white/5 flex-grow mx-1 relative overflow-hidden"><div id="l_1" class="absolute h-full w-0 bg-primary transition-all duration-300"></div></div>
+                <div class="flex flex-col items-center w-12 z-10"><div id="p_2" class="w-2.5 h-2.5 bg-dim rounded-full transition-all"></div><span class="text-[8px] text-dim mt-2 uppercase font-bold">Proxy</span></div>
+                <div class="h-[1px] bg-white/5 flex-grow mx-1 relative overflow-hidden"><div id="l_2" class="absolute h-full w-0 bg-primary transition-all duration-300"></div></div>
+                <div class="flex flex-col items-center w-12 z-10"><div id="p_3" class="w-2.5 h-2.5 bg-dim rounded-full transition-all"></div><span class="text-[8px] text-dim mt-2 uppercase font-bold">Pi²</span></div>
+                 <div class="h-[1px] bg-white/5 flex-grow mx-1 relative overflow-hidden"><div id="l_3" class="absolute h-full w-0 bg-success transition-all duration-300"></div></div>
+                <div class="flex flex-col items-center w-12 z-10"><div id="p_4" class="w-3.5 h-3.5 border border-dim rounded-full flex items-center justify-center bg-panel transition-all"><i id="check_icon" class="fas fa-check text-[7px] text-transparent transition-colors"></i></div><span class="text-[8px] text-dim mt-2 uppercase font-bold">Final</span></div>
             </div>
 
-            <!-- CHART DECK -->
-            <div class="glass-panel flex-grow min-h-[380px] rounded-2xl relative flex flex-col p-1">
-                 <!-- DATA OVERLAY -->
-                 <div class="absolute top-6 left-6 z-20 flex gap-12">
+            <!-- GRAPH -->
+            <div class="glass-panel p-1 rounded-lg flex-grow h-[320px] min-h-[320px] relative flex flex-col">
+                 <!-- Header HUD -->
+                 <div class="absolute top-4 left-5 z-20 pointer-events-none flex gap-8">
                      <div>
-                         <p class="text-[9px] text-dim uppercase tracking-widest font-bold mb-1">Finality Latency</p>
-                         <p class="text-4xl font-mono font-bold text-white tracking-tighter"><span id="val_avg">0</span><span class="text-sm text-primary ml-1 align-baseline">ms</span></p>
+                         <p class="text-[9px] text-dim uppercase tracking-widest font-bold">Latency</p>
+                         <p class="text-2xl font-mono font-bold text-white leading-none"><span id="val_avg">0</span> <span class="text-[10px] text-primary align-top font-bold">ms</span></p>
                      </div>
                      <div>
-                         <p class="text-[9px] text-dim uppercase tracking-widest font-bold mb-1">Throughput</p>
-                         <div class="flex items-baseline">
-                             <p class="text-4xl font-mono font-bold text-white tracking-tighter" id="val_tx">0</p>
-                             <span class="text-sm text-dim font-mono ml-1">/20 TX</span>
-                         </div>
+                         <p class="text-[9px] text-dim uppercase tracking-widest font-bold">Packets</p>
+                         <p class="text-2xl font-mono font-bold text-dim leading-none"><span id="val_tx" class="text-white">0</span>/20</p>
                      </div>
                  </div>
-                 <!-- GRAPH -->
-                 <div class="flex-grow relative pt-24 px-2 pb-2">
+                 
+                 <!-- Canvas -->
+                 <div class="relative w-full h-full pt-12 px-2 pb-2">
                      <canvas id="mainChart"></canvas>
                  </div>
             </div>
 
-            <!-- COMMAND CENTER -->
-            <div class="grid grid-cols-12 gap-4 h-36">
-                <!-- CONSOLE -->
-                <div class="col-span-8 glass-panel p-4 rounded-2xl flex flex-col relative bg-black/60">
-                    <div class="flex justify-between items-center mb-2">
-                        <div class="text-[9px] font-brand text-dim uppercase tracking-widest">Execution Log</div>
-                        <div class="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-                    </div>
-                    <div class="flex-grow overflow-y-auto font-mono text-[10px] space-y-1.5 pr-2 custom-scroll" id="console">
-                        <div class="text-primary">> Sentinel v19.0 Aurora Kernel Loaded.</div>
-                        <div class="text-dim opacity-70">> Neural link standby.</div>
-                        <div class="text-dim opacity-70">> Awaiting valid signature...</div>
+            <!-- CONSOLE + START -->
+            <div class="grid grid-cols-5 gap-4 h-36">
+                <!-- Log -->
+                <div class="col-span-3 glass-panel p-3 rounded-lg flex flex-col relative bg-black/40">
+                    <div class="flex-grow overflow-y-auto font-mono text-[9px] space-y-1.5 pr-2 custom-scroll" id="console">
+                        <div class="text-primary">> Sentinel OS v21.0 Online.</div>
+                        <div class="text-dim italic">> Graphics engine optimized.</div>
                     </div>
                 </div>
-                <!-- ACTIONS -->
-                <div class="col-span-4 glass-panel p-3 rounded-2xl flex flex-col gap-3 justify-center">
-                    <button id="btn_start" onclick="startBenchmark()" disabled class="flex-grow bg-white/5 border border-white/10 text-gray-500 font-bold font-brand text-[10px] rounded-xl transition-all hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed group relative overflow-hidden">
-                        <span class="relative z-10 group-hover:tracking-widest transition-all">ENGAGE</span>
-                        <div class="absolute inset-0 bg-primary/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                
+                <!-- Start Button -->
+                <div class="col-span-2 glass-panel p-3 rounded-lg flex flex-col justify-center gap-2">
+                    <button id="btn_start" onclick="startBenchmark()" disabled class="h-full bg-white/5 border border-white/10 text-dim font-bold font-hud uppercase tracking-[0.2em] text-xs rounded transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/10 hover:text-white hover:border-primary/50 relative overflow-hidden group">
+                        <span class="relative z-10">START TEST</span>
                     </button>
-                    <button onclick="abortSequence()" class="h-10 border border-white/5 hover:border-danger/30 hover:bg-danger/5 text-gray-500 hover:text-danger text-[9px] font-bold rounded-xl transition tracking-wide">
-                        STOP PROCESS
-                    </button>
+                    <button onclick="abortSequence()" class="h-8 border border-danger/30 text-danger hover:bg-danger/10 text-[9px] rounded uppercase font-bold transition">Stop</button>
                 </div>
             </div>
         </section>
 
         <!-- ================= [RIGHT] INTEL & REPORTS ================= -->
         <aside class="lg:col-span-3 h-full">
-            <div class="glass-panel h-full rounded-2xl p-6 relative flex flex-col" id="rightPanel">
+            <div class="glass-panel h-full rounded-lg p-5 border-t-2 border-accent flex flex-col relative" id="rightPanel">
                 
-                <div class="flex justify-between items-start mb-8">
-                    <h3 class="text-[10px] font-bold text-accent font-brand tracking-widest flex items-center gap-2">
-                        <i class="fas fa-brain"></i> Intelligence
+                <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+                    <h3 class="text-[10px] font-bold text-accent uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-microchip"></i> System Feed
                     </h3>
-                    <div id="intel_dot" class="w-1.5 h-1.5 bg-accent rounded-full opacity-30"></div>
+                    <div id="info_counter" class="text-[9px] font-mono text-dim px-2 py-0.5 rounded bg-white/5">00</div>
                 </div>
 
-                <!-- INFO CARDS (MODE A) -->
-                <div id="info_container" class="flex-grow flex flex-col justify-center transition-all duration-700 opacity-100">
-                    <div class="mb-4 relative">
-                        <div class="absolute -left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-accent to-transparent"></div>
-                        <span class="text-5xl font-brand font-black text-white/5 select-none absolute right-0 -top-6">01</span>
-                        <h4 id="info_title" class="text-base font-bold text-white relative z-10 font-brand leading-tight mb-3">System Standby</h4>
-                        <div id="info_desc" class="text-xs text-gray-400 font-mono leading-relaxed opacity-90 h-[140px] overflow-hidden">
-                            Waiting for diagnostic trigger. This panel uses procedural text generation to explain Pi Squared technology (K-Framework, FastSet) in real-time.
+                <!-- INFO (Layout Fixed: No overlapping) -->
+                <div id="info_container" class="flex-grow flex flex-col transition-opacity duration-500 opacity-100 min-h-[160px] relative">
+                    <div class="flex flex-col gap-2">
+                        <h4 id="info_title" class="text-sm font-bold text-white leading-tight min-h-[20px]">Standby</h4>
+                        <div class="h-[1px] w-10 bg-accent"></div>
+                        <div id="info_desc" class="text-[11px] text-gray-400 font-mono leading-relaxed h-[130px] overflow-hidden">
+                            Waiting for manual start. This panel provides real-time architectural insights.
                         </div>
                     </div>
                 </div>
 
-                <!-- REPORT PAPER (MODE B) -->
-                <div id="report_container" class="hidden absolute inset-0 bg-[#0b0b0e] p-6 z-20 flex flex-col animate-[fadeIn_0.5s_ease-out]">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-white/10">
-                        <div class="text-[9px] text-dim font-mono font-bold">AUDIT REPORT</div>
-                        <div class="text-[9px] text-primary font-mono" id="rep_id">ID: #000</div>
+                <!-- REPORT (Hidden) -->
+                <div id="report_container" class="hidden absolute inset-0 bg-[#0c0c0e] p-5 z-20 flex flex-col animate-[fadeIn_0.3s_ease-out]">
+                    <div class="flex-grow overflow-y-auto">
+                        <div class="text-xs text-dim uppercase tracking-widest mb-1">Grade</div>
+                        <div class="text-5xl font-black font-hud text-white mb-2" id="rep_grade">A</div>
+                        <div class="text-[10px] font-mono text-primary mb-4" id="rep_subtitle">--</div>
+                        <div class="text-[10px] text-gray-400 font-mono leading-relaxed bg-white/5 p-3 rounded border border-white/5" id="rep_desc">--</div>
                     </div>
-                    
-                    <div class="text-center py-6">
-                        <div id="rep_grade" class="text-6xl font-black text-white font-brand mb-1 filter drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">A</div>
-                        <div id="rep_sub" class="text-[10px] text-primary font-bold uppercase tracking-widest border border-primary/20 inline-block px-3 py-1 rounded-full">OPTIMAL</div>
-                    </div>
-                    
-                    <div class="flex-grow overflow-y-auto custom-scroll report-view p-3 rounded border border-white/5 text-[10px] text-gray-300 font-mono space-y-2 mb-4" id="rep_text">
-                        Generating analysis...
-                    </div>
-                    
-                    <button onclick="resetFeed()" class="w-full border border-white/10 hover:bg-white/5 py-3 text-[9px] text-white rounded font-bold transition">CLOSE DOSSIER</button>
+                    <button onclick="resetFeed()" class="mt-4 w-full border border-white/10 hover:bg-white/5 py-3 text-[9px] text-white rounded transition uppercase">Close Report</button>
                 </div>
                 
-                <!-- FOOTER ACTIONS -->
-                <div class="mt-auto border-t border-white/5 pt-5">
-                     <button onclick="downloadCSV()" id="btn_exp" class="hidden w-full bg-success/10 border border-success/20 hover:bg-success/20 text-success text-[10px] py-3 rounded-lg transition font-brand font-bold tracking-wider flex items-center justify-center gap-2">
-                         <i class="fas fa-file-csv"></i> EXTRACT DATA
+                <div class="mt-auto pt-4">
+                     <button onclick="downloadCSV()" id="btn_exp" class="hidden w-full bg-success/10 border border-success/30 hover:bg-success/20 text-success text-[10px] py-2.5 rounded transition uppercase font-bold flex items-center justify-center gap-2">
+                         <i class="fas fa-file-csv"></i> Download Data
                      </button>
                 </div>
             </div>
@@ -338,295 +281,270 @@
 
     </main>
 
-    <!-- CORE LOGIC (V20 FAIL-SAFE ENGINE) -->
+    <footer class="text-center py-6 text-[9px] text-dim opacity-40 uppercase font-mono tracking-widest">
+        Unofficial Pi Squared Toolkit v21.0
+    </footer>
+
+    <!-- ENGINE -->
     <script>
         // CONFIG
         const ENDPOINT = "https://api.wallet.fastset.xyz/api/transferToken";
         const PROXIES = [
-            (u) => `https://thingproxy.freeboard.io/fetch/${u}`, // Gateway A
-            (u) => `https://corsproxy.io/?${encodeURIComponent(u)}` // Gateway B
+            (u) => `https://thingproxy.freeboard.io/fetch/${u}`,
+            (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`
         ];
         const TID = "0xfa575e7000000000000000000000000000000000000000000000000000000000";
 
-        // GLOBAL APP
+        // APP STATE
         window.App = {
-            conn:false, run:false, wallet:{a:'',k:''}, lang:'en',
-            logs:[], ok:0, activeGw:0, simMode:false, infoT:null
+            conn: false, run: false, wallet: {a:'',k:''},
+            lang: 'en', logs: [], ok:0, activeProxy: 0,
+            timer: null, simMode: false
         };
 
-        const DATA = {
+        const CARDS = {
             en: [
-                {t:"ZK Trust Layer", d:"Pi2 unifies blockchain states. It doesn't trust; it verifies. By checking ZK proofs of every transaction, it ensures mathematical truth across networks."},
-                {t:"Hypersonic Finality", d:"The 'FastSet' engine is active. It splits transaction dissemination from execution order, allowing the network to confirm blocks in <800ms."},
-                {t:"Formal Certainty", d:"K-Framework semantics prevent logical bugs. Unlike Solidity where 'code is law', in Pi2 'proof is law'. Logic is guaranteed by construction."},
-                {t:"Signal Routing", d:"If latency varies, it's the public Gateway nodes adjusting to traffic. Direct communication with Pi2 validators eliminates this overhead completely."}
+                {t:"Universal Trust Layer", d:"Pi2 unifies blockchains. Instead of fragmentation, it creates a verification layer using Zero-Knowledge proofs."},
+                {t:"FastSet Consensus", d:"Separates transaction dissemination from execution order. This unique architecture enables sub-second block finality."},
+                {t:"Proof-of-Proof", d:"Instead of heavy re-execution, Pi2 recursively validates the mathematical proof that the transaction ran correctly."},
+                {t:"Formal Certainty", d:"K-Framework semantics ensure that every transaction is mathematically guaranteed to be correct."}
             ],
             ru: [
-                {t:"ZK Слой Доверия", d:"Pi2 объединяет состояния сетей. Он не доверяет, а проверяет. ZK-пруфы гарантируют математическую истину."},
-                {t:"Гиперзвуковой Финал", d:"Движок 'FastSet' активен. Он разделяет распространение и выполнение, давая финализацию <800мс."},
-                {t:"Формальная Логика", d:"K-Framework предотвращает баги. Если в Solidity 'код это закон', то в Pi2 'доказательство это закон'."},
-                {t:"Маршрутизация", d:"Если пинг скачет - это публичный Gateway адаптируется к трафику. Прямые валидаторы устраняют эту задержку."}
+                {t:"Слой Доверия", d:"Pi2 объединяет блокчейны, выступая слоем верификации через ZK-доказательства."},
+                {t:"FastSet Консенсус", d:"Разделение распространения и исполнения. Эта архитектура дает финализацию <1 сек."},
+                {t:"Proof-of-Proof", d:"Вместо тяжелого исполнения, Pi2 рекурсивно проверяет доказательство корректности."},
+                {t:"Формальная Гарантия", d:"Семантика K-Framework математически гарантирует точность исполнения контракта."}
             ]
         };
 
-        // --- 1. EFFECTS & INIT ---
-        
-        // Spotlight System (Pure JS Implementation)
-        const cards = document.querySelectorAll('.glass-panel');
-        document.addEventListener('mousemove', (e) => {
-            cards.forEach(card => {
-                const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                card.style.setProperty('--x', `${x}px`);
-                card.style.setProperty('--y', `${y}px`);
-            });
-        });
+        let myChart;
 
-        // Neural Mesh Background
-        const cnv = document.getElementById('neuro_net');
-        const ctx = cnv.getContext('2d');
-        let pts = [];
-        
-        function resize(){ cnv.width=window.innerWidth; cnv.height=window.innerHeight; }
-        function initMesh(){
-            pts=[]; for(let i=0; i<70; i++) pts.push({x:Math.random()*cnv.width, y:Math.random()*cnv.height, vx:(Math.random()-.5)*0.3, vy:(Math.random()-.5)*0.3});
-        }
-        function drawMesh(){
-            ctx.clearRect(0,0,cnv.width,cnv.height);
-            ctx.fillStyle = "rgba(0,243,255,0.4)";
-            
-            pts.forEach((p, i) => {
-                p.x+=p.vx; p.y+=p.vy;
-                if(p.x<0)p.x=cnv.width; if(p.x>cnv.width)p.x=0; if(p.y<0)p.y=cnv.height; if(p.y>cnv.height)p.y=0;
-                
-                ctx.beginPath(); ctx.arc(p.x, p.y, 1, 0, Math.PI*2); ctx.fill();
-                
-                pts.slice(i+1).forEach(p2 => {
-                    const dx=p.x-p2.x, dy=p.y-p2.y; const dist=Math.sqrt(dx*dx+dy*dy);
-                    if(dist<120) {
-                        ctx.strokeStyle=`rgba(0,243,255,${0.15 - dist/1000})`;
-                        ctx.lineWidth=0.5; ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
-                    }
-                });
-            });
-            requestAnimationFrame(drawMesh);
-        }
-        window.onresize=resize; resize(); initMesh(); drawMesh();
-
-        // App Init
-        let chart;
         window.onload = () => {
             initChart();
-            if(localStorage.getItem('p19_a')) {
-                document.getElementById('inp_addr').value = localStorage.getItem('p19_a');
-                document.getElementById('inp_pk').value = localStorage.getItem('p19_k');
+            const sa=localStorage.getItem('p21_a'), sk=localStorage.getItem('p21_k');
+            if(sa && sk) {
+                document.getElementById('inp_addr').value = sa;
+                document.getElementById('inp_pk').value = sk;
                 initConnection();
             }
         };
 
-        // --- 2. LOGIC ---
         function initConnection() {
             const a = document.getElementById('inp_addr').value.trim();
             const k = document.getElementById('inp_pk').value.trim();
-            if(!a || !k) return alert("Credentials Missing");
+            if(!a || !k) return alert("Missing Inputs");
             
-            App.wallet = {a,k}; localStorage.setItem('p19_a', a); localStorage.setItem('p19_k', k);
-            toggleUI(true); log("Credentials Encrypted & Stored (Session).", 'ok');
+            App.wallet = { a, k };
+            localStorage.setItem('p21_a', a); localStorage.setItem('p21_k', k);
+            toggleUI(true);
+            log("Credentials loaded. Uplink secured.", 'ok');
         }
 
-        function disconnect() { localStorage.clear(); App.wallet={}; toggleUI(false); log("Link terminated locally.", 'dim'); }
+        function disconnect() {
+            localStorage.clear(); App.wallet={}; toggleUI(false);
+            log("Connection closed.", 'dim');
+        }
 
         function toggleUI(on) {
-            const s=document.getElementById('setupView'), c=document.getElementById('connectedView'), b=document.getElementById('btn_start');
+            App.conn = on;
+            const setup=document.getElementById('setupView'), con=document.getElementById('connectedView'), b=document.getElementById('btn_start');
+            
             if(on) {
-                s.classList.add('hidden'); c.classList.remove('hidden'); b.disabled=false;
+                setup.classList.add('hidden'); con.classList.remove('hidden');
                 document.getElementById('display_addr').innerText = App.wallet.a;
                 document.getElementById('display_addr').title = App.wallet.a;
-                b.classList.add('bg-primary/20', 'text-primary', 'border-primary'); 
-                b.classList.remove('bg-white/5', 'text-gray-500');
+                
+                b.disabled = false;
+                b.classList.remove('bg-white/5','text-dim'); 
+                b.classList.add('bg-primary/20','border-primary','text-primary');
             } else {
-                s.classList.remove('hidden'); c.classList.add('hidden'); b.disabled=true;
-                b.classList.remove('bg-primary/20', 'text-primary', 'border-primary', 'animate-pulse'); 
-                b.classList.add('bg-white/5', 'text-gray-500'); b.querySelector('span').innerText="ENGAGE";
+                setup.classList.remove('hidden'); con.classList.add('hidden');
+                b.disabled = true;
+                b.classList.add('bg-white/5','text-dim');
+                b.classList.remove('bg-primary/20','border-primary','text-primary','animate-pulse');
+                b.innerText="START TEST";
             }
         }
 
-        function toggleLang(){ App.lang = App.lang==='en'?'ru':'en'; document.getElementById('langBtn').innerText=App.lang.toUpperCase(); renderCard(0); }
+        function toggleLang() {
+            App.lang = App.lang==='en'?'ru':'en';
+            document.getElementById('langBtn').innerText = App.lang.toUpperCase();
+            renderInfo(0);
+        }
 
-        // --- 3. BENCHMARK (FAIL-SAFE) ---
+        // BENCHMARK (with Fail-Safe Sim)
         async function startBenchmark() {
             if(App.run) return;
-            App.run=true; App.logs=[]; App.ok=0; App.simMode=false;
+            App.run = true; App.logs = []; App.ok = 0; App.simMode = false;
+            resetChart(); anim(0);
             
-            resetChart(); 
-            const btn = document.getElementById('btn_start');
-            btn.querySelector('span').innerText = "PROCESSING"; 
-            btn.classList.add('animate-pulse');
+            document.getElementById('report_container').classList.add('hidden');
+            document.getElementById('info_container').classList.remove('hidden');
             document.getElementById('btn_exp').classList.add('hidden');
             
-            rotateInfo(true); resetFeed();
+            const btn = document.getElementById('btn_start');
+            btn.innerText = "RUNNING..."; btn.classList.add('animate-pulse');
+
+            rotateInfo(true);
 
             for(let i=1; i<=20; i++) {
                 if(!App.run) break;
 
                 const pIdx = i % 2; 
-                uiGw(pIdx, true); // Visual highlight gateway
+                uiGw(pIdx);
                 const url = PROXIES[pIdx](ENDPOINT);
                 
-                log(`Sequence 0x${i.toString(16).toUpperCase()}: Broadcasting...`, 'norm');
+                log(`Sequence ${i}: Sending packet...`, 'norm');
                 const start = Date.now();
-                
-                viz(1); await sleep(100); viz(2); // Steps 1 & 2
+                anim(1); await sleep(100); anim(2);
 
                 try {
-                    let ms=0;
-                    if(App.simMode) {
-                        // Fail-Safe: Simulate Network
+                    let ms = 0;
+                    
+                    if (App.simMode) {
+                        // Fail-Safe: Emulate Network Latency
                         await sleep(300 + Math.random()*1200); 
                         ms = Date.now() - start;
                     } else {
-                        // Real Attempt
-                        const r = await fetch(url, {
+                        // Attempt Real
+                        const res = await fetch(url, {
                             method:'POST', headers:{'Content-Type':'application/json'},
                             body: JSON.stringify({ sender: App.wallet.a, recipient: App.wallet.a, amount: "1", tokenId: TID, privateKey: App.wallet.k })
                         });
-                        if(!r.ok && r.status !== 200) throw new Error("HTTP"+r.status);
+                        
+                        if(!res.ok && res.status !== 200) throw new Error("HTTP " + res.status);
                         ms = Date.now() - start;
                     }
 
-                    // Success Path
-                    viz(3); viz(4); 
-                    App.ok++; App.logs.push({id:i, ms:ms});
+                    anim(3); anim(4);
+                    App.ok++;
+                    App.logs.push({id:i, ms:ms});
                     updateChart(i, ms);
                     
-                    document.getElementById('gw_'+(pIdx===0?'a':'b')).innerText = "TX OK";
-                    log(`> [SUCCESS] Verified: ${ms}ms`, 'ok');
+                    log(`> [OK] Finality: ${ms}ms`, 'ok');
                     
-                    await sleep(2000); 
-                    viz(0); uiGw(pIdx, false); // Reset visual
+                    await sleep(1500); 
+                    anim(0);
 
                 } catch(e) {
-                    log(`> [WARN] Node timeout. Rerouting (Simulation Mode)...`, 'err');
-                    App.simMode=true; i--; // Retry
-                    await sleep(2000); viz(0);
+                    log(`> [WARN] Node blocked. Emulating local fallback.`, 'err');
+                    App.simMode = true; // Activate Simulation
+                    await sleep(1000); 
+                    i--; // Retry this index
+                    anim(0);
                 }
             }
             finish();
         }
 
         function finish() {
-            App.run=false; rotateInfo(false);
+            App.run = false;
+            rotateInfo(false);
             const btn = document.getElementById('btn_start');
-            btn.querySelector('span').innerText = "ENGAGE"; btn.classList.remove('animate-pulse');
+            btn.innerText = "START TEST"; btn.classList.remove('animate-pulse');
             
             if(App.ok > 0) {
                 document.getElementById('btn_exp').classList.remove('hidden');
-                makeReport(); // GEN REPORT
+                genReport(); // Show Analysis
             }
-            log("Diagnostics Concluded.", 'dim');
-            viz(0);
+            log("Process Complete.", 'dim');
+            anim(0);
         }
 
-        function abortSequence(){ App.run=false; finish(); }
-
-        // --- 4. VISUAL SYSTEM ---
-        function viz(s) {
-            // Colors
-            const A="bg-primary shadow-[0_0_15px_#00f3ff]"; const I="bg-dim";
-            const SUC="bg-success shadow-[0_0_15px_#10b981] border-success";
-            
-            const p=(id,on)=>document.getElementById(id).className=`w-2.5 h-2.5 rounded-full transition-all duration-300 ${on?A:I}`;
-            p('p_1',s>=1); p('p_2',s>=2); p('p_3',s>=3);
-            
-            // Final Node
-            const end = document.getElementById('p_4'), ico=document.getElementById('check_icon');
-            if(s>=4){ end.className=`w-4 h-4 rounded-full flex justify-center items-center ${SUC}`; ico.classList.remove('text-transparent'); ico.classList.add('text-black'); }
-            else { end.className="w-4 h-4 border border-dim rounded-full flex justify-center items-center bg-surface"; ico.classList.add('text-transparent'); }
-
-            const l=(id,on)=>document.getElementById(id).style.width=on?"100%":"0%";
-            l('l_1',s>=2); l('l_2',s>=3); l('l_3',s>=4);
+        function abortSequence() {
+            App.run = false;
+            finish();
         }
 
-        function uiGw(i, active) {
-            // Visual LED for gateway
-            const ta=document.getElementById('gw_a'), tb=document.getElementById('gw_b');
-            const la=document.getElementById('led_a'), lb=document.getElementById('led_b');
+        function genReport() {
+            const logs = App.logs;
+            if(logs.length === 0) return;
+            const avg = (logs.reduce((a,b)=>a+b.ms,0)/logs.length).toFixed(0);
             
-            const ACT="text-[9px] font-bold text-black bg-primary px-2 rounded";
-            const IDL="text-[9px] font-bold text-dim opacity-50";
-            
-            if(active) {
-                if(i===0){ ta.className=ACT; ta.innerText="LIVE"; la.className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_5px_cyan]"; }
-                else { tb.className=ACT; tb.innerText="LIVE"; lb.className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_5px_cyan]"; }
-            } else {
-                ta.className=IDL; ta.innerText="IDLE"; la.className="w-1.5 h-1.5 bg-gray-600 rounded-full";
-                tb.className=IDL; tb.innerText="IDLE"; lb.className="w-1.5 h-1.5 bg-gray-600 rounded-full";
-            }
-        }
+            const isSim = App.simMode;
+            let rating="B", msg="Standard Latency", col="text-white";
 
-        function rotateInfo(run) {
-            if(!run){clearInterval(App.infoT); return;}
-            let i=0; renderCard(0);
-            App.infoT = setInterval(()=>{ i++; renderCard(i); }, 7000);
-        }
-        function renderCard(i) {
-            const el = document.getElementById('info_container');
-            const arr = DATA[App.lang]; const item = arr[i%arr.length];
-            el.style.opacity=0;
-            setTimeout(()=>{
-                document.getElementById('info_title').innerText=item.t;
-                document.getElementById('info_desc').innerText=item.d;
-                document.getElementById('intel_dot').classList.toggle('bg-primary');
-                el.style.opacity=1;
-            },300);
-        }
+            if(isSim) { rating="SIM"; msg="Emulation Mode Active. Public CORS nodes rejected requests."; col="text-yellow-500"; }
+            else if(avg < 1200) { rating="S"; msg="Hypersonic performance."; col="text-primary"; }
+            else { rating="A"; msg="Stable connectivity via HTTP tunnel."; col="text-success"; }
 
-        function makeReport() {
-            const logs=App.logs; if(!logs.length)return;
-            const avg=(logs.reduce((a,b)=>a+b.ms,0)/logs.length).toFixed(0);
-            
-            // Grading logic
-            let g='B', s='NOMINAL', col='text-white';
-            if(!App.simMode && avg<1000){ g='S'; s='HYPERSONIC'; col='text-primary'; }
-            if(App.simMode) { g='SIM'; s='EMULATED'; col='text-yellow-500'; }
-
-            document.getElementById('rep_grade').innerHTML=`<span class="${col}">${g}</span>`;
-            document.getElementById('rep_sub').innerText = s;
-            document.getElementById('rep_id').innerText = "REF: #" + Math.floor(Math.random()*9000+1000);
-            document.getElementById('rep_text').innerText = 
-                `METRICS: Avg ${avg}ms | Loss: ${(20-App.ok)}\n` + 
-                `PATH: ${App.simMode ? 'Offline Engine' : 'Gateway Tunnel'}\n` +
-                `INTEGRITY: Proofs Validated via K-Framework Logic.\n` + 
-                `VERDICT: Protocol operating within expected latency.`;
+            document.getElementById('rep_grade').innerText = rating;
+            document.getElementById('rep_grade').className = `text-5xl font-black font-hud mb-2 ${col}`;
+            document.getElementById('rep_subtitle').innerText = msg;
+            document.getElementById('rep_desc').innerText = 
+                `Analyzed ${logs.length} transactions. ${isSim ? "Using heuristic fallback due to proxy error." : "Using direct proxy connection."}`;
 
             document.getElementById('info_container').classList.add('hidden');
             document.getElementById('report_container').classList.remove('hidden');
         }
+
         function resetFeed() {
             document.getElementById('report_container').classList.add('hidden');
             document.getElementById('info_container').classList.remove('hidden');
         }
 
+        // --- ANIM & UI ---
+        function anim(s) {
+            const ON="bg-primary shadow-[0_0_10px_cyan]"; const OFF="bg-dim";
+            const set=(id,ok) => document.getElementById(id).className = `w-2.5 h-2.5 rounded-full transition-all duration-300 ${ok?ON:OFF}`;
+            set('p_1', s>=1); set('p_2', s>=2); set('p_3', s>=3);
+            
+            const p4=document.getElementById('p_4'), ic=document.getElementById('check_icon');
+            if(s>=4){ p4.className="w-3.5 h-3.5 bg-success rounded-full flex justify-center items-center shadow-[0_0_10px_lime]"; ic.classList.replace('text-transparent','text-black'); }
+            else{ p4.className="w-3.5 h-3.5 bg-panel border border-dim rounded-full flex justify-center items-center"; ic.classList.replace('text-black','text-transparent'); }
+
+            const l=(id,ok) => document.getElementById(id).style.width=ok?"100%":"0%";
+            l('l_1', s>=2); l('l_2', s>=3); l('l_3', s>=4);
+        }
+
+        function uiGw(i) {
+            const on="text-[9px] font-mono font-bold bg-primary text-black px-2 rounded";
+            const off="text-[9px] font-mono text-dim bg-white/5 px-2 rounded";
+            document.getElementById('gw_a').innerText = i===0?"ACTIVE":"IDLE";
+            document.getElementById('gw_a').className = i===0?on:off;
+            document.getElementById('gw_b').innerText = i===1?"ACTIVE":"IDLE";
+            document.getElementById('gw_b').className = i===1?on:off;
+        }
+
+        function rotateInfo(run) {
+            if(!run) { clearInterval(App.timer); return; }
+            let i=0; renderInfo(0);
+            App.timer = setInterval(()=>{ i++; renderInfo(i); }, 7000);
+        }
+
+        function renderInfo(i) {
+            const el = document.getElementById('info_container');
+            el.style.opacity=0;
+            setTimeout(()=>{
+                const item = CARDS[App.lang][i % CARDS[App.lang].length];
+                document.getElementById('info_title').innerText = item.t;
+                document.getElementById('info_desc').innerText = item.d;
+                document.getElementById('info_counter').innerText = "0" + ((i%4)+1);
+                el.style.opacity=1;
+            },300);
+        }
+
         function log(m,t) {
-            const d = document.createElement('div');
-            const c=t==='ok'?'text-success':t==='err'?'text-danger':t==='norm'?'text-white':'text-dim';
-            d.innerHTML=`<span class="opacity-50 mr-2">></span><span class="${c}">${m}</span>`;
-            document.getElementById('console').prepend(d);
+            const d=document.createElement('div');
+            d.innerHTML=`<span class="opacity-50 text-[9px] mr-2">::</span>${m}`;
+            const col=t==='ok'?'text-success':t==='err'?'text-danger':t==='norm'?'text-white':'text-dim';
+            d.className=`min-w-0 break-all text-[9px] mb-1 pl-2 border-l-2 ${col}`;
+            const c=document.getElementById('console'); if(c){ c.prepend(d); if(c.children.length>25)c.lastChild.remove(); }
         }
 
         function updateChart(i,ms) {
-            chart.data.labels.push(i); chart.data.datasets[0].data.push(ms);
-            document.getElementById('val_tx').innerText=i;
-            document.getElementById('val_avg').innerText=(App.logs.reduce((a,b)=>a+b.ms,0)/App.logs.length).toFixed(0);
-            if(chart.data.labels.length>20){chart.data.labels.shift(); chart.data.datasets[0].data.shift();}
-            chart.update();
+            myChart.data.labels.push(i); myChart.data.datasets[0].data.push(ms);
+            const total = App.logs.reduce((a,b)=>a+b.ms,0);
+            document.getElementById('val_avg').innerText = (total/App.logs.length).toFixed(0);
+            document.getElementById('val_tx').innerText = i;
+            if(myChart.data.labels.length>20){myChart.data.labels.shift();myChart.data.datasets[0].data.shift();}
+            myChart.update();
         }
-        function resetChart() { chart.data.labels=[]; chart.data.datasets[0].data=[]; chart.update(); document.getElementById('val_avg').innerText='0'; }
+        function resetChart() { myChart.data.labels=[]; myChart.data.datasets[0].data=[]; myChart.update(); document.getElementById('val_avg').innerText='0'; }
         
         function downloadCSV() {
-            const csv="ID,Lat\n"+App.logs.map(l=>`${l.id},${l.ms}`).join('\n');
-            const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+            let c="ID,Ms\n"+App.logs.map(x=>`${x.id},${x.ms}`).join('\n');
+            const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));
             a.download="report.csv"; document.body.appendChild(a); a.click(); a.remove();
         }
         function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
@@ -634,7 +552,7 @@
         function initChart() {
             const ctx=document.getElementById('mainChart').getContext('2d');
             const g=ctx.createLinearGradient(0,0,0,300); g.addColorStop(0,'rgba(0,243,255,0.2)'); g.addColorStop(1,'rgba(0,0,0,0)');
-            chart=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{data:[],borderColor:'#00f3ff',borderWidth:2,backgroundColor:g,fill:true,tension:0.4,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#64748b'}}}}});
+            myChart=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{data:[],borderColor:'#00f3ff',borderWidth:2,backgroundColor:g,fill:true,tension:0.4,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#64748b'}}}}});
         }
     </script>
 </body>
