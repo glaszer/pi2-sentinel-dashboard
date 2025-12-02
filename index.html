@@ -3,262 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi2 Sentinel | Network Monitor</title>
+    <title>Pi2 Sentinel | Analytics & Education</title>
     
-    <!-- FONTS -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <!-- LIBS -->
+    <!-- STYLES & FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- THEME CONFIG -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         pi: {
-                            bg: '#050508',
-                            card: '#0f0f16',
-                            primary: '#00e5ff',
-                            secondary: '#7c3aed',
-                            success: '#10b981',
-                            danger: '#ef4444',
+                            bg: '#020204',
+                            card: '#0b0b12',
+                            primary: '#00f2ea', // Cyan Neon
+                            accent: '#7000ff',  // Deep Violet
+                            success: '#0aff99',
+                            danger: '#ff2a6d',
                             text: '#e2e8f0',
-                            dim: '#64748b'
+                            dim: '#545975'
                         }
                     },
-                    fontFamily: {
-                        mono: ['"JetBrains Mono"', 'monospace'],
-                        sans: ['"Inter"', 'sans-serif']
-                    }
+                    fontFamily: { mono: ['"JetBrains Mono"', 'monospace'], sans: ['"Inter"', 'sans-serif'] }
                 }
             }
         }
     </script>
 
     <style>
-        body { background-color: #050508; overflow-x: hidden; }
+        body { background-color: #020204; overflow-x: hidden; }
         .glass {
-            background: rgba(15, 15, 22, 0.7);
-            backdrop-filter: blur(12px);
+            background: rgba(11, 11, 18, 0.65);
+            backdrop-filter: blur(14px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
         }
-        .neon-focus:focus {
-            outline: none;
-            border-color: #00e5ff;
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
-        }
-        .scanline {
-            width: 100%; height: 2px;
-            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
-            position: absolute; opacity: 0.3;
-            animation: scan 3s linear infinite;
-        }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .highlight { animation: flash 1s; }
+        @keyframes flash { 0% { color: #fff; text-shadow: 0 0 10px white; } 100% { color: inherit; } }
         
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f0f16; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #00e5ff; }
+        .pulse-ring {
+            box-shadow: 0 0 0 0 rgba(0, 242, 234, 0.7);
+            animation: ring 2s infinite;
+        }
+        @keyframes ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 234, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 242, 234, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 242, 234, 0); }
+        }
     </style>
 </head>
 <body class="text-pi-text font-sans antialiased relative selection:bg-pi-primary selection:text-black">
 
-    <!-- ANIMATED BG -->
+    <!-- BG EFFECTS -->
+    <div class="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-pi-accent via-pi-primary to-pi-accent z-50 shadow-[0_0_20px_#00f2ea]"></div>
     <canvas id="particles" class="fixed top-0 left-0 w-full h-full pointer-events-none opacity-20 z-0"></canvas>
 
-    <div class="relative z-10 max-w-7xl mx-auto px-4 py-6 min-h-screen flex flex-col">
+    <div class="relative z-10 max-w-7xl mx-auto px-4 py-8 min-h-screen flex flex-col">
 
-        <!-- HEADER -->
-        <header class="flex flex-col md:flex-row justify-between items-center mb-8 glass rounded-2xl p-5 gap-4">
+        <!-- NAV -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
             <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pi-secondary to-pi-primary flex items-center justify-center font-bold text-black text-2xl shadow-lg shadow-pi-primary/20">π²</div>
+                <div class="relative">
+                    <div class="w-12 h-12 rounded bg-white/5 flex items-center justify-center border border-white/10 text-2xl">π²</div>
+                    <div class="absolute -top-1 -right-1 w-3 h-3 bg-pi-success rounded-full animate-pulse"></div>
+                </div>
                 <div>
-                    <h1 class="text-2xl font-bold tracking-widest text-white">SENTINEL <span class="text-xs align-top text-pi-primary bg-pi-primary/10 border border-pi-primary/30 px-2 py-0.5 rounded ml-1">v7.0</span></h1>
-                    <p class="text-xs text-pi-dim font-mono tracking-widest">Universal Settlement Layer Monitor</p>
+                    <h1 class="text-2xl font-black tracking-tighter text-white">SENTINEL <span class="text-pi-primary">PRO</span></h1>
+                    <p class="text-[10px] text-pi-dim font-mono uppercase tracking-widest">Universal Settlement Layer Analytics</p>
                 </div>
             </div>
             
-            <div class="flex items-center gap-4">
-                <div class="text-right hidden md:block">
-                    <p class="text-xs text-pi-dim">SYSTEM STATUS</p>
-                    <p class="text-xs font-mono text-pi-success flex items-center gap-1 justify-end"><span class="w-1.5 h-1.5 bg-pi-success rounded-full animate-pulse"></span> ONLINE</p>
-                </div>
-                <button onclick="toggleLang()" class="text-xs font-bold border border-white/10 px-4 py-2 rounded hover:bg-white/5 transition hover:text-pi-primary" id="btn_lang">EN / RU</button>
+            <div class="flex gap-3">
+                <button onclick="downloadCSV()" id="btn_export" class="hidden text-xs font-bold font-mono bg-white/5 hover:bg-white/10 px-4 py-2 rounded border border-white/10 transition flex items-center gap-2">
+                    <i class="fas fa-download"></i> EXPORT DATA
+                </button>
+                <button onclick="toggleLang()" class="text-xs font-bold font-mono border border-pi-primary/30 text-pi-primary px-4 py-2 rounded hover:bg-pi-primary/10 transition" id="btn_lang">EN / RU</button>
             </div>
         </header>
 
-        <!-- MAIN CONTENT -->
-        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+        <!-- DASHBOARD GRID -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow">
             
-            <!-- LEFT PANEL: CONFIG & INFO -->
+            <!-- CONTROLS & EDUCATION -->
             <aside class="lg:col-span-4 flex flex-col gap-6">
                 
-                <!-- CONNECTION CARD -->
-                <div class="glass rounded-xl p-6 relative overflow-hidden transition hover:border-pi-primary/30">
-                    <h2 class="text-sm font-bold text-white mb-4 flex items-center gap-2 border-b border-white/5 pb-2">
-                        <i class="fas fa-satellite-dish text-pi-primary"></i> <span id="lbl_conn">UPLINK CONFIGURATION</span>
+                <!-- WALLET CONNECT -->
+                <div class="glass rounded-none border-l-4 border-pi-primary p-6 relative group">
+                    <div class="absolute top-2 right-2 text-pi-dim/20 text-4xl font-black z-0 pointer-events-none">01</div>
+                    <h2 class="text-xs font-bold text-white mb-6 tracking-widest uppercase relative z-10 flex items-center gap-2">
+                        <i class="fas fa-wifi text-pi-primary"></i> <span id="t_uplink">UPLINK CONFIG</span>
                     </h2>
 
-                    <!-- ALERT -->
-                    <div class="bg-red-900/20 border-l-2 border-pi-danger p-3 mb-5 text-xs text-red-200">
-                        <strong class="block mb-1"><i class="fas fa-shield-alt"></i> SECURITY WARNING</strong>
-                        <span id="txt_warning">Use BURNER (Testnet) wallets only. Keys are stored in your browser's LocalStorage.</span>
-                    </div>
-
-                    <!-- FORM -->
-                    <div id="setupForm" class="space-y-4">
-                        <div class="group">
-                            <label class="text-[10px] text-pi-dim font-bold tracking-wider uppercase mb-1 block">Set1 Address</label>
-                            <input type="text" id="inp_addr" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-xs font-mono text-pi-primary neon-focus transition placeholder-gray-700" placeholder="set1...">
+                    <!-- Config View -->
+                    <div id="setupForm" class="space-y-4 relative z-10">
+                         <div class="p-3 bg-pi-danger/10 border border-pi-danger/20 rounded text-[10px] leading-relaxed text-red-200">
+                            <i class="fas fa-exclamation-circle mr-1"></i> <span id="t_warn">Security: Use TESTNET (Burner) wallets only.</span>
                         </div>
-                        <div class="group">
-                            <label class="text-[10px] text-pi-dim font-bold tracking-wider uppercase mb-1 block">Private Key</label>
-                            <input type="password" id="inp_pk" class="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-xs font-mono text-pi-primary neon-focus transition placeholder-gray-700" placeholder="0x...">
-                        </div>
-                        <button onclick="saveConfig()" id="btn_connect" class="w-full bg-white/5 hover:bg-pi-primary hover:text-black border border-pi-primary/50 text-pi-primary font-bold py-3 rounded-lg transition duration-300 flex justify-center items-center gap-2 text-xs tracking-wider">
-                            INITIALIZE CONNECTION <i class="fas fa-arrow-right"></i>
+                        <input type="text" id="inp_addr" class="w-full bg-black/40 border-b border-white/10 p-3 text-xs font-mono text-pi-primary focus:border-pi-primary focus:outline-none transition" placeholder="set1...">
+                        <input type="password" id="inp_pk" class="w-full bg-black/40 border-b border-white/10 p-3 text-xs font-mono text-pi-primary focus:border-pi-primary focus:outline-none transition" placeholder="0x...">
+                        
+                        <button onclick="saveConfig()" id="btn_connect" class="w-full mt-2 bg-white/5 hover:bg-pi-primary hover:text-black border border-pi-primary/40 text-pi-primary font-bold py-3 uppercase text-xs tracking-wider transition-all duration-300">
+                            Initialize Link
                         </button>
                     </div>
 
-                    <!-- CONNECTED STATE -->
-                    <div id="connectedView" class="hidden flex flex-col items-center justify-center py-4 space-y-4 animate-in fade-in">
-                        <div class="relative">
-                            <div class="absolute inset-0 bg-pi-success blur-xl opacity-20"></div>
-                            <div class="w-16 h-16 rounded-full border-2 border-pi-success/50 flex items-center justify-center relative bg-black/50">
-                                <i class="fas fa-link text-pi-success text-xl"></i>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-xs text-pi-dim mb-1">Target Address</p>
-                            <p id="display_addr" class="font-mono text-pi-primary text-xs bg-pi-primary/5 px-2 py-1 rounded border border-pi-primary/10">...</p>
-                        </div>
-                        <button onclick="disconnect()" class="text-[10px] text-pi-danger hover:underline opacity-80 mt-2">TERMINATE SESSION</button>
+                    <!-- Active View -->
+                    <div id="connectedView" class="hidden relative z-10 text-center py-2">
+                        <div class="text-xs text-pi-dim uppercase mb-1">Target Identity</div>
+                        <div class="font-mono text-pi-success bg-pi-success/5 p-2 rounded mb-4 break-all text-[10px]" id="display_addr">...</div>
+                        <button onclick="disconnect()" class="text-[10px] text-pi-danger border-b border-pi-danger hover:text-white pb-0.5">TERMINATE CONNECTION</button>
                     </div>
                 </div>
 
-                <!-- ACADEMY WIDGET -->
-                <div class="glass rounded-xl p-6 flex-grow flex flex-col">
-                    <h3 class="text-sm font-bold text-white mb-4 flex justify-between items-center">
-                        <span id="lbl_academy">🧠 KNOWLEDGE BASE</span>
-                        <span class="text-[10px] bg-pi-secondary/20 text-pi-secondary px-2 py-0.5 rounded">WIKI</span>
-                    </h3>
-                    
-                    <div class="space-y-3 overflow-y-auto pr-1 h-64 custom-scroll text-xs" id="edu_content">
-                        <!-- Dynamic content -->
-                    </div>
+                <!-- DYNAMIC EDUCATION (AI INSIGHTS) -->
+                <div class="glass p-6 flex-grow flex flex-col relative border-t-4 border-pi-accent">
+                     <div class="absolute top-2 right-2 text-pi-dim/20 text-4xl font-black z-0 pointer-events-none">02</div>
+                     <h3 class="text-xs font-bold text-white mb-4 tracking-widest uppercase flex items-center gap-2">
+                        <i class="fas fa-brain text-pi-accent"></i> <span id="t_insight">LIVE INSIGHTS</span>
+                     </h3>
+
+                     <div class="bg-black/30 rounded p-4 border border-white/5 mb-4 min-h-[100px] flex items-center justify-center text-center">
+                         <p id="insight_box" class="text-xs text-pi-dim italic leading-relaxed">
+                            Start the benchmark to see real-time analysis of the network behavior...
+                         </p>
+                     </div>
+
+                     <!-- Legend -->
+                     <div class="mt-auto space-y-2">
+                         <div class="flex items-center gap-2 text-[10px] text-gray-500">
+                             <span class="w-2 h-2 rounded-full bg-pi-success"></span> <span id="l_fast">FastSet Active (<1s)</span>
+                         </div>
+                         <div class="flex items-center gap-2 text-[10px] text-gray-500">
+                             <span class="w-2 h-2 rounded-full bg-yellow-500"></span> <span id="l_norm">Normal Load (1-3s)</span>
+                         </div>
+                     </div>
                 </div>
 
             </aside>
 
-            <!-- RIGHT PANEL: DASHBOARD -->
+            <!-- ANALYTICS DASHBOARD -->
             <section class="lg:col-span-8 flex flex-col gap-6">
                 
-                <!-- METRICS GRID -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="glass p-4 rounded-xl relative overflow-hidden">
-                        <p class="text-[10px] text-pi-dim font-bold tracking-wider uppercase mb-1">Status</p>
-                        <p id="val_status" class="text-lg font-mono font-bold text-gray-500">IDLE</p>
-                        <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-500/20" id="bar_status"></div>
+                <!-- KPIS -->
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="glass p-4 border-t-2 border-white/10 text-center">
+                        <p class="text-[10px] text-pi-dim uppercase tracking-widest mb-1">Status</p>
+                        <p id="val_status" class="text-lg font-bold text-gray-500 font-mono">IDLE</p>
                     </div>
-                    <div class="glass p-4 rounded-xl">
-                        <p class="text-[10px] text-pi-dim font-bold tracking-wider uppercase mb-1">Latency</p>
-                        <p class="text-lg font-mono font-bold text-pi-primary"><span id="val_lat">--</span> ms</p>
-                    </div>
-                    <div class="glass p-4 rounded-xl">
-                        <p class="text-[10px] text-pi-dim font-bold tracking-wider uppercase mb-1">Success</p>
-                        <p class="text-lg font-mono font-bold text-pi-secondary"><span id="val_rate">--</span>%</p>
-                    </div>
-                    <div class="glass p-4 rounded-xl">
-                        <p class="text-[10px] text-pi-dim font-bold tracking-wider uppercase mb-1">Txs</p>
-                        <p class="text-lg font-mono font-bold text-white"><span id="val_txs">0</span>/20</p>
-                    </div>
-                </div>
-
-                <!-- CHART AREA -->
-                <div class="glass p-5 rounded-xl flex-grow min-h-[350px] relative border border-white/5">
-                    <div class="absolute top-4 right-5 z-20">
-                         <div id="liveIndicator" class="hidden flex items-center gap-2 px-3 py-1 bg-black/40 border border-pi-danger/50 rounded-full text-pi-danger text-[10px] font-bold shadow-lg shadow-red-900/20 animate-pulse">
-                            <span class="w-1.5 h-1.5 bg-pi-danger rounded-full"></span> LIVE FEED
+                    <div class="glass p-4 border-t-2 border-pi-primary text-center">
+                        <p class="text-[10px] text-pi-dim uppercase tracking-widest mb-1">Latency</p>
+                        <div class="flex items-baseline justify-center gap-1">
+                            <span id="val_lat" class="text-2xl font-bold text-white font-mono">0</span>
+                            <span class="text-xs text-pi-primary">ms</span>
                         </div>
                     </div>
-                    <canvas id="mainChart"></canvas>
+                    <div class="glass p-4 border-t-2 border-pi-accent text-center">
+                        <p class="text-[10px] text-pi-dim uppercase tracking-widest mb-1">Traffic Sim</p>
+                        <p id="val_amount" class="text-lg font-bold text-pi-accent font-mono">0.00</p>
+                    </div>
+                    <div class="glass p-4 border-t-2 border-pi-success text-center">
+                        <p class="text-[10px] text-pi-dim uppercase tracking-widest mb-1">Success</p>
+                        <p id="val_rate" class="text-lg font-bold text-pi-success font-mono">0%</p>
+                    </div>
                 </div>
 
-                <!-- CONSOLE & CONTROLS -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 h-48">
+                <!-- MAIN VISUALIZATION -->
+                <div class="glass p-1 rounded min-h-[300px] relative border border-white/5 flex flex-col">
+                    <div class="absolute top-4 right-5 flex gap-2">
+                         <div id="proxy_ind" class="hidden px-2 py-0.5 rounded text-[10px] font-mono border bg-black/50 text-gray-400 border-gray-700">PROXY: A</div>
+                    </div>
+                    <canvas id="mainChart" class="flex-grow"></canvas>
+                </div>
+
+                <!-- ACTIONS & LOGS -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-56">
+                    
                     <!-- TERMINAL -->
-                    <div class="md:col-span-2 glass rounded-xl p-3 bg-black/60 font-mono text-[10px] overflow-y-auto relative custom-scroll border border-white/5" id="console">
-                        <div class="scanline pointer-events-none"></div>
-                        <div class="text-pi-primary mb-1">> Pi Squared Sentinel v7.0 loaded...</div>
-                        <div class="text-pi-dim mb-1">> Ready to monitor Universal Settlement Layer.</div>
-                        <div class="text-gray-600 italic">> Waiting for user input...</div>
+                    <div class="md:col-span-2 glass bg-[#050508] p-4 font-mono text-[10px] overflow-y-auto border border-white/10 shadow-inner" id="console">
+                        <div class="text-pi-primary mb-2">> Loading Sentinel v8.0 Core...</div>
+                        <div class="text-pi-dim">> System ready. Random Payload Generator armed.</div>
+                        <div class="text-pi-dim">> Waiting for Uplink...</div>
                     </div>
 
-                    <!-- ACTION BUTTONS -->
-                    <div class="glass rounded-xl p-4 flex flex-col justify-center gap-3">
-                         <button id="btn_start" onclick="startTest()" disabled class="w-full bg-gradient-to-r from-pi-primary to-pi-secondary hover:opacity-90 disabled:opacity-20 disabled:cursor-not-allowed text-black font-bold py-4 rounded-lg text-xs transition shadow-lg shadow-pi-primary/20 tracking-wider">
-                            START BENCHMARK
+                    <!-- CONTROL -->
+                    <div class="glass p-5 flex flex-col justify-center gap-4 relative">
+                         <div class="absolute top-2 right-2 text-pi-dim/20 text-4xl font-black z-0 pointer-events-none">03</div>
+                         
+                         <button id="btn_start" onclick="startTest()" disabled class="z-10 w-full bg-gradient-to-r from-pi-primary to-pi-accent hover:contrast-125 disabled:grayscale text-black font-black py-4 rounded-sm text-sm shadow-[0_0_20px_rgba(0,242,234,0.3)] transition-all">
+                            START TEST
                         </button>
-                        <button onclick="stopTest()" class="w-full bg-white/5 hover:bg-white/10 text-pi-dim hover:text-white text-xs py-2 rounded-lg transition border border-white/5">
-                            STOP SYSTEM
-                        </button>
+                        
+                        <div class="z-10 text-center">
+                             <p class="text-[10px] text-pi-dim mb-2">Simulated Traffic: 20 TXs</p>
+                             <button onclick="stopTest()" class="text-[10px] text-red-500 hover:text-red-400 border border-red-900/50 bg-red-900/10 px-4 py-1 rounded">ABORT SEQUENCE</button>
+                        </div>
                     </div>
                 </div>
+
             </section>
         </main>
-        
-        <footer class="mt-8 text-center text-[10px] text-pi-dim opacity-40">
-            SENTINEL MONITOR | UNOFFICIAL TOOL FOR PI SQUARED COMMUNITY | BUILD v7.0.2
-        </footer>
-
     </div>
 
-    <!-- JAVASCRIPT ENGINE -->
     <script>
-        // --- 📡 CORE CONFIG ---
-        
-        // Массив прокси для ротации. Если один падает, используем следующий.
-        const ENDPOINT = "https://api.wallet.fastset.xyz/api/transferToken";
+        // --- ⚙️ ENGINE CONFIG ---
+        const API_URL = "https://api.wallet.fastset.xyz/api/transferToken";
+        // Массив прокси. Если один банит, переключаемся.
         const PROXIES = [
             (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-            (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` 
+            (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
         ];
         
         const TOKEN_ID = "0xfa575e7000000000000000000000000000000000000000000000000000000000";
 
-        // --- STATE MANAGER ---
+        // --- STATE ---
         let lang = 'en';
         let isRunning = false;
         let chart;
-        let stats = { ok: 0, fail: 0, total: 0 };
+        let stats = { ok: 0, fail: 0, history: [] };
         let wallet = { a: '', k: '' };
 
-        // --- DICTIONARY ---
+        // --- TEXT DATA ---
         const TX = {
             en: {
-                h_con: "UPLINK CONFIG", bn_con: "CONNECT", st_idle: "IDLE", st_run: "RUNNING...",
-                btn_run: "START BENCHMARK",
-                warn: "Security: Use TESTNET wallets only. Keys stored locally.",
-                wiki: [
-                    { t: "Why is 'set1' address required?", d: "Pi Squared is based on Cosmos SDK architecture, which uses 'set1' Bech32 addresses instead of Ethereum '0x'." },
-                    { t: "What is FastSet?", d: "It is the consensus mechanism ensuring finality in <1 second. This tool measures its real-time performance." },
-                    { t: "Why Proxy Rotation?", d: "To stress-test from a browser, we rotate between CORS proxies. If one fails (Rate Limit), we switch to another." }
-                ]
+                h1: "UPLINK CONFIG", bn_c: "INITIALIZE LINK", warn: "Security: Use TESTNET wallets only. Keys stored locally.",
+                h_insight: "LIVE INSIGHTS", st_idle: "IDLE", st_run: "RUNNING",
+                l_fast: "FastSet (<1s)", l_norm: "Normal (1-3s)",
+                
+                // Educational Insights based on speed
+                msg_fast: "⚡ <b>Impressive!</b> The network achieved finality in under 800ms. This confirms the FastSet consensus is operating optimally, outpacing traditional block times.",
+                msg_mid: "✅ <b>Stable.</b> Transactions are processing normally. Variance likely due to geographical distance to the RPC node.",
+                msg_slow: "🐢 <b>Latency Detected.</b> Slow response (>2s) is likely due to the public <b>CORS Proxy</b> throttling our connection, NOT the Pi2 network itself.",
+                msg_err: "💥 <b>Network Block.</b> The proxy tunnel was rate-limited. Auto-rotating to a new gateway..."
             },
             ru: {
-                h_con: "НАСТРОЙКА", bn_con: "ПОДКЛЮЧИТЬ", st_idle: "ОЖИДАНИЕ", st_run: "РАБОТА...",
-                btn_run: "ЗАПУСТИТЬ ТЕСТ",
-                warn: "Внимание: Используйте тестовые кошельки. Ключи хранятся локально.",
-                wiki: [
-                    { t: "Почему адрес 'set1'?", d: "Pi Squared основан на Cosmos SDK, где адреса начинаются на 'set1' (Bech32), а не на '0x' как в Ethereum." },
-                    { t: "Что такое FastSet?", d: "Механизм консенсуса с финализацией <1 сек. Этот инструмент замеряет его реальную скорость." },
-                    { t: "Зачем ротация прокси?", d: "Чтобы тестировать сеть из браузера без блокировок, мы переключаем шлюзы, если один из них выдает ошибку." }
-                ]
+                h1: "НАСТРОЙКА", bn_c: "ПОДКЛЮЧИТЬСЯ", warn: "Безопасность: Только тестовые кошельки. Ключи хранятся локально.",
+                h_insight: "ЖИВОЙ АНАЛИЗ", st_idle: "ОЖИДАНИЕ", st_run: "РАБОТАЕТ",
+                l_fast: "FastSet (<1c)", l_norm: "Норма (1-3c)",
+
+                msg_fast: "⚡ <b>Впечатляет!</b> Финализация менее 800мс. FastSet работает быстрее, чем создаются блоки в Эфириуме.",
+                msg_mid: "✅ <b>Стабильно.</b> Транзакции проходят штатно. Задержка может быть связана с удаленностью RPC узла.",
+                msg_slow: "🐢 <b>Задержка.</b> Высокий пинг (>2с), скорее всего, вызван нашим публичным <b>Proxy-туннелем</b>, а не сетью Pi2.",
+                msg_err: "💥 <b>Сбой шлюза.</b> Публичный прокси временно заблокировал IP. Меняем маршрут..."
             }
         };
 
@@ -266,8 +254,6 @@
         window.onload = () => {
             initParticles();
             initChart();
-            renderWiki();
-            
             if(localStorage.getItem('pi2_a')) {
                 wallet.a = localStorage.getItem('pi2_a');
                 wallet.k = localStorage.getItem('pi2_k');
@@ -278,233 +264,230 @@
         function toggleLang() {
             lang = lang === 'en' ? 'ru' : 'en';
             document.getElementById('btn_lang').innerText = lang.toUpperCase() + ' / ' + (lang==='en'?'RU':'EN');
-            
-            // Text updates
-            document.getElementById('lbl_conn').innerText = TX[lang].h_con;
-            document.getElementById('btn_connect').innerHTML = `${TX[lang].bn_con} <i class="fas fa-arrow-right"></i>`;
-            document.getElementById('txt_warning').innerText = TX[lang].warn;
-            document.getElementById('btn_start').innerText = TX[lang].btn_run;
-            document.getElementById('val_status').innerText = isRunning ? TX[lang].st_run : TX[lang].st_idle;
-            
-            renderWiki();
+            updateUIStrings();
         }
 
-        function renderWiki() {
-            const div = document.getElementById('edu_content');
-            div.innerHTML = '';
-            TX[lang].wiki.forEach(w => {
-                const el = document.createElement('div');
-                el.className = "group border-l-2 border-white/5 pl-3 hover:border-pi-primary transition-all duration-300";
-                el.innerHTML = `
-                    <h4 class="text-pi-primary font-bold mb-1 group-hover:text-white">${w.t}</h4>
-                    <p class="text-pi-dim opacity-70 leading-relaxed group-hover:opacity-100">${w.d}</p>
-                `;
-                div.appendChild(el);
-            });
+        function updateUIStrings() {
+            document.getElementById('t_uplink').innerText = TX[lang].h1;
+            document.getElementById('btn_connect').innerText = TX[lang].bn_c;
+            document.getElementById('t_warn').innerText = TX[lang].warn;
+            document.getElementById('t_insight').innerText = TX[lang].h_insight;
+            document.getElementById('l_fast').innerText = TX[lang].l_fast;
+            document.getElementById('l_norm').innerText = TX[lang].l_norm;
         }
 
-        // --- CONNECTION LOGIC ---
         function saveConfig() {
             const a = document.getElementById('inp_addr').value.trim();
             const k = document.getElementById('inp_pk').value.trim();
-            if(!a.startsWith('set1') || !k.startsWith('0x')) return alert("Invalid Address (needs set1) or Key (needs 0x)");
-            
-            localStorage.setItem('pi2_a', a);
-            localStorage.setItem('pi2_k', k);
-            wallet.a = a; wallet.k = k;
+            if(!a.startsWith('set1') || !k.startsWith('0x')) return alert("Format Error: Addr=set1..., Key=0x...");
+            localStorage.setItem('pi2_a', a); localStorage.setItem('pi2_k', k);
+            wallet = { a, k };
             toggleUI(true);
-            log("Credentials encrypted & saved in LocalStorage.", 'ok');
         }
 
-        function disconnect() {
-            localStorage.clear(); wallet={a:'',k:''}; toggleUI(false);
-            log("Session terminated. Keys wiped.", 'warn');
-        }
+        function disconnect() { localStorage.clear(); wallet={a:'',k:''}; toggleUI(false); }
 
-        function toggleUI(connected) {
-            const f = document.getElementById('setupForm');
-            const v = document.getElementById('connectedView');
+        function toggleUI(active) {
+            const form = document.getElementById('setupForm');
+            const view = document.getElementById('connectedView');
             const btn = document.getElementById('btn_start');
             
-            if(connected) {
-                f.classList.add('hidden'); v.classList.remove('hidden'); btn.disabled = false;
+            if(active) {
+                form.classList.add('hidden'); view.classList.remove('hidden'); btn.disabled = false;
                 document.getElementById('display_addr').innerText = wallet.a;
-                document.getElementById('val_status').innerText = "READY";
             } else {
-                f.classList.remove('hidden'); v.classList.add('hidden'); btn.disabled = true;
-                document.getElementById('val_status').innerText = "IDLE";
+                form.classList.remove('hidden'); view.classList.add('hidden'); btn.disabled = true;
             }
         }
 
-        // --- 🚀 BENCHMARK ENGINE (WITH PROXY ROTATION) ---
+        // --- CORE: RANDOMIZED BENCHMARK ---
         async function startTest() {
             if(isRunning) return;
             isRunning = true;
-            updateStatus(true);
+            document.getElementById('btn_export').classList.add('hidden');
             
-            stats = { ok: 0, fail: 0, total: 0 };
+            stats = { ok: 0, fail: 0, history: [] };
             chart.data.labels = []; chart.data.datasets[0].data = []; chart.update();
-            updateStatsDOM();
-            
-            log("Initializing proxy tunnel...", 'info');
-            
-            const MAX_TX = 20;
-            let proxyIndex = 0; // Начинаем с первого прокси
+            updateInsight(TX[lang].st_run + "...", 'dim');
+            updateStatusDOM(true);
 
-            for(let i=1; i<=MAX_TX; i++) {
+            const TX_COUNT = 20;
+            let proxyIndex = 0; // Для ротации
+
+            for(let i=1; i<=TX_COUNT; i++) {
                 if(!isRunning) break;
-                
-                // ВЫБОР ПРОКСИ:
-                // Мы берем функцию из массива по индексу (с зацикливанием)
-                const buildUrl = PROXIES[proxyIndex % PROXIES.length];
-                const activeUrl = buildUrl(ENDPOINT);
-                
-                // Обозначаем, через что идем (G1 или G2)
-                const gwLabel = (proxyIndex % PROXIES.length) === 0 ? "Pri" : "Bck";
 
-                log(`[TX #${i}] Broadcasting (Gw:${gwLabel})...`, 'dim');
-                const start = Date.now();
+                // 1. RANDOM AMOUNT (Feature request)
+                // От 0.1 до 50.0 монет
+                const amount = (Math.random() * (50 - 0.1) + 0.1).toFixed(4);
+                
+                // 2. PROXY SELECTOR
+                const getGateway = PROXIES[proxyIndex % PROXIES.length];
+                const activeUrl = getGateway(API_URL);
+                document.getElementById('proxy_ind').innerText = `GW: ${proxyIndex % PROXIES.length === 0 ? 'A' : 'B'}`;
+
+                log(`Sending <b>${amount}</b> Pi2... (TX #${i})`, 'dim');
+                document.getElementById('val_amount').innerText = amount;
+                
+                const startT = Date.now();
 
                 try {
                     const resp = await fetch(activeUrl, {
                         method: 'POST',
-                        // Minimal headers to avoid triggering bots
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             sender: wallet.a, recipient: wallet.a, 
-                            amount: "1", tokenId: TOKEN_ID, privateKey: wallet.k
+                            amount: amount, // Randomized payload
+                            tokenId: TOKEN_ID, privateKey: wallet.k
                         })
                     });
-
-                    // Читаем текст, так как 'raw' endpoint может вести себя по разному
-                    const text = await resp.text();
                     
-                    // Проверка: успешен ли запрос
-                    // Либо HTTP 200, Либо AllOrigins 'raw' пропуск
+                    const text = await resp.text();
+
+                    // Check if success (Allowing allorigins logic if status wrapped)
                     if(resp.ok) {
-                         const ms = Date.now() - start;
-                         stats.ok++;
-                         updateChart(i, ms);
-                         log(`✅ #${i} CONFIRMED: ${ms}ms`, 'ok');
-                         
-                         // Успех? Ждем 2 сек.
-                         await sleep(2000); 
+                        const lat = Date.now() - startT;
+                        stats.ok++;
+                        
+                        // Push to history for Export
+                        stats.history.push({ id: i, amount: amount, latency: lat, status: "OK", time: new Date().toISOString() });
+
+                        log(`✅ Confirmed in <b>${lat}ms</b>`, 'ok');
+                        updateChart(i, lat);
+                        updateMetrics(lat);
+                        explainSpeed(lat); // AI Education logic
+                        
+                        await sleep(2500); // 2.5s safe delay
                     } else {
-                         // Если сервер вернул 4xx/5xx - это может быть бан прокси
-                         throw new Error(`HTTP ${resp.status}`);
+                        throw new Error(`HTTP ${resp.status}`);
                     }
 
                 } catch(e) {
                     stats.fail++;
-                    log(`⚠️ #${i} REJECTED (${e.message}). Rotating Proxy...`, 'warn');
+                    stats.history.push({ id: i, amount: amount, latency: 0, status: "FAIL", time: new Date().toISOString() });
+                    log(`❌ Error: ${e.message}`, 'err');
+                    updateInsight(TX[lang].msg_err, 'err');
                     
-                    // ! ROTATION MAGIC !
-                    // Меняем индекс прокси на следующий
-                    proxyIndex++; 
-                    
-                    // Наказание: ждем дольше (3.5 сек) перед следующей попыткой
-                    await sleep(3500);
+                    // Rotate Proxy
+                    proxyIndex++;
+                    await sleep(3500); // Cool down
                 }
-
-                stats.total = i;
-                updateStatsDOM();
             }
-            
             stopTest();
         }
 
         function stopTest() {
             isRunning = false;
-            updateStatus(false);
-            log(`Benchmark Finished. Success Rate: ${(stats.ok/Math.max(stats.total,1)*100).toFixed(0)}%`, 'info');
+            updateStatusDOM(false);
+            updateInsight("Benchmark Complete. Download Report available.", 'dim');
+            // Show Export Button
+            document.getElementById('btn_export').classList.remove('hidden');
         }
 
-        function updateStatsDOM() {
-            document.getElementById('val_txs').innerText = stats.total;
-            const rate = stats.total > 0 ? (stats.ok/stats.total*100) : 0;
-            document.getElementById('val_rate').innerText = rate.toFixed(0);
-        }
-
-        function updateStatus(active) {
-            const st = document.getElementById('val_status');
-            const ind = document.getElementById('liveIndicator');
-            const bar = document.getElementById('bar_status');
-            
-            if(active) {
-                st.innerText = TX[lang].st_run;
-                st.classList.add('text-pi-primary', 'animate-pulse');
-                st.classList.remove('text-gray-500');
-                ind.classList.remove('hidden');
-                bar.classList.add('bg-pi-primary'); bar.classList.remove('bg-gray-500/20');
+        // --- EDUCATION LOGIC (INSIGHTS) ---
+        function explainSpeed(ms) {
+            let msg = "";
+            if(ms < 800) { 
+                msg = TX[lang].msg_fast; 
+                document.getElementById('t_insight').classList.add('text-pi-success');
+            } else if (ms < 2000) {
+                msg = TX[lang].msg_mid;
+                document.getElementById('t_insight').classList.remove('text-pi-success', 'text-pi-danger');
             } else {
-                st.innerText = TX[lang].st_idle;
-                st.classList.remove('text-pi-primary', 'animate-pulse');
-                st.classList.add('text-gray-500');
-                ind.classList.add('hidden');
-                bar.classList.remove('bg-pi-primary'); bar.classList.add('bg-gray-500/20');
+                msg = TX[lang].msg_slow;
+                document.getElementById('t_insight').classList.add('text-pi-danger');
+            }
+            updateInsight(msg);
+        }
+
+        function updateInsight(html, type) {
+            const box = document.getElementById('insight_box');
+            box.innerHTML = html;
+            box.parentElement.classList.add('highlight');
+            setTimeout(() => box.parentElement.classList.remove('highlight'), 500);
+        }
+
+        // --- EXPORT CSV (KILLER FEATURE) ---
+        function downloadCSV() {
+            let csv = "ID,Timestamp,Amount_Pi2,Latency_ms,Status\n";
+            stats.history.forEach(row => {
+                csv += `${row.id},${row.time},${row.amount},${row.latency},${row.status}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `pi2_sentinel_report_${Date.now()}.csv`);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // --- UI UPDATERS ---
+        function updateMetrics(lat) {
+            if(lat > 0) document.getElementById('val_lat').innerText = lat;
+            const total = stats.ok + stats.fail;
+            const rate = total === 0 ? 0 : (stats.ok / total * 100);
+            document.getElementById('val_rate').innerText = rate.toFixed(0) + '%';
+            
+            const latEl = document.getElementById('val_lat');
+            // Color coding based on speed
+            if(lat < 1000) latEl.className = "text-2xl font-bold text-pi-success font-mono";
+            else if(lat < 2500) latEl.className = "text-2xl font-bold text-yellow-400 font-mono";
+            else latEl.className = "text-2xl font-bold text-pi-danger font-mono";
+        }
+
+        function updateStatusDOM(run) {
+            document.getElementById('val_status').innerText = run ? TX[lang].st_run : TX[lang].st_idle;
+            const btn = document.getElementById('btn_start');
+            if(run) {
+                btn.classList.add('pulse-ring');
+                btn.innerText = "TEST RUNNING...";
+            } else {
+                btn.classList.remove('pulse-ring');
+                btn.innerText = TX[lang].btn_run;
             }
         }
 
         function updateChart(label, data) {
             chart.data.labels.push(label);
             chart.data.datasets[0].data.push(data);
-            
-            // Если слишком много точек, сдвигаем
             if(chart.data.labels.length > 20) {
-                chart.data.labels.shift();
-                chart.data.datasets[0].data.shift();
+                chart.data.labels.shift(); chart.data.datasets[0].data.shift();
             }
             chart.update();
-            document.getElementById('val_lat').innerText = data;
         }
-
-        // --- HELPERS ---
-        const sleep = ms => new Promise(r => setTimeout(r, ms));
 
         function log(msg, type) {
-            const con = document.getElementById('console');
-            const el = document.createElement('div');
-            el.innerHTML = `<span class="opacity-50">[${new Date().toLocaleTimeString('en-GB')}]</span> ${msg}`;
-            
-            if(type==='ok') el.className = 'text-pi-success';
-            else if(type==='warn') el.className = 'text-pi-danger';
-            else if(type==='info') el.className = 'text-pi-primary';
-            else el.className = 'text-pi-dim';
-            
-            con.prepend(el);
-            if(con.children.length > 30) con.lastElementChild.remove();
+            const div = document.createElement('div');
+            div.className = "mb-1 border-l-2 pl-2 " + (type==='ok' ? 'border-pi-success text-pi-success' : type==='err'?'border-pi-danger text-pi-danger':'border-pi-dim text-pi-dim');
+            div.innerHTML = `<span class="opacity-50 text-[10px] mr-2">${new Date().toLocaleTimeString('en-GB')}</span>${msg}`;
+            document.getElementById('console').prepend(div);
         }
+        
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+        // --- CHART JS ---
         function initChart() {
             const ctx = document.getElementById('mainChart').getContext('2d');
-            const grad = ctx.createLinearGradient(0,0,0,300);
-            grad.addColorStop(0, 'rgba(0, 229, 255, 0.2)');
-            grad.addColorStop(1, 'rgba(0, 229, 255, 0)');
+            const g = ctx.createLinearGradient(0,0,0,300);
+            g.addColorStop(0, 'rgba(0, 242, 234, 0.2)'); g.addColorStop(1, 'rgba(0,0,0,0)');
             
             chart = new Chart(ctx, {
                 type: 'line',
-                data: { labels:[], datasets:[{
-                    label: 'Latency', data:[], borderColor:'#00e5ff', borderWidth:2, 
-                    backgroundColor: grad, fill:true, tension:0.4, 
-                    pointBackgroundColor:'#050508', pointBorderColor:'#fff'
+                data: { labels:[], datasets:[{ 
+                    data:[], borderColor:'#00f2ea', backgroundColor:g, fill:true, tension:0.4,
+                    pointBackgroundColor:'#020204', pointBorderColor:'#fff', borderWidth:2 
                 }]},
-                options: {
-                    responsive:true, maintainAspectRatio:false,
-                    plugins: { legend: {display:false} },
-                    scales: {
-                        x: { display:false },
-                        y: { grid: {color:'rgba(255,255,255,0.05)'}, ticks:{color:'#64748b', font:{family:'JetBrains Mono'}} }
-                    }
-                }
+                options: { responsive:true, maintainAspectRatio:false, plugins:{legend:false}, 
+                scales:{ x:{display:false}, y:{grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#545975'}} } }
             });
         }
         
-        function initParticles(){const c=document.getElementById('particles'),x=c.getContext('2d');
-        c.width=window.innerWidth;c.height=window.innerHeight;
-        let p=Array(50).fill().map(()=>({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,s:Math.random()*2}));
-        function a(){x.clearRect(0,0,c.width,c.height);x.fillStyle="#00e5ff";
-        p.forEach(e=>{e.x+=e.vx;e.y+=e.vy;if(e.x<0)e.x=c.width;if(e.x>c.width)e.x=0;if(e.y<0)e.y=c.height;if(e.y>c.height)e.y=0;
-        x.beginPath();x.arc(e.x,e.y,e.s,0,Math.PI*2);x.fill()});requestAnimationFrame(a)}a()}
+        // --- PARTICLES ---
+        function initParticles(){const c=document.getElementById('particles'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;let p=Array(60).fill().map(()=>({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,s:Math.random()*2}));function a(){x.clearRect(0,0,c.width,c.height);x.fillStyle="#00f2ea";p.forEach(e=>{e.x+=e.vx;e.y+=e.vy;if(e.x<0)e.x=c.width;if(e.x>c.width)e.x=0;if(e.y<0)e.y=c.height;if(e.y>c.height)e.y=0;x.beginPath();x.arc(e.x,e.y,e.s,0,Math.PI*2);x.fill()});requestAnimationFrame(a)}a()}
     </script>
 </body>
 </html>
