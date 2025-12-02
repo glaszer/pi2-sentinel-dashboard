@@ -1,6 +1,6 @@
 # 🛡️ Pi Squared Sentinel (Devnet Monitor)
 
-**Live Demo:** [ВСТАВЬТЕ_СЮДА_ВАШУ_ССЫЛКУ_GITHUB_PAGES]
+**Live Demo:**
 
 An unofficial diagnostic dashboard for the Pi Squared Network.
 Designed to visualize **FastSet** consensus speed and test latency limits.
@@ -16,4 +16,4 @@ Designed for **Burner Wallets** (Testnet) only.
 The code is open source — verify it yourself before using.
 
 ---
-*Built by [Ваш Ник] for the Pi2 Community.*
+*Built by [Microcutsd] for the Pi2 Community.*
