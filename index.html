@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi2 Sentinel | v12 Architect Stable</title>
+    <title>Pi2 Sentinel | v12.1 Hotfix</title>
     
-    <!-- RESOURCES -->
+    <!-- FONTS & LIBS -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- CONFIG TAILWIND -->
     <script>
         tailwind.config = {
             theme: {
@@ -19,8 +18,8 @@
                     colors: {
                         bg: '#050505',
                         panel: '#0a0a0c',
-                        primary: '#00e5ff', /* Pi2 Cyan */
-                        accent: '#7b2cbf',  /* Deep Purple */
+                        primary: '#00e5ff', 
+                        accent: '#7b2cbf', 
                         success: '#00ff9d',
                         danger: '#ff003c',
                         dim: '#475569'
@@ -36,13 +35,10 @@
 
     <style>
         body { background-color: #050505; color: #e2e8f0; overflow-x: hidden; }
-        
-        /* SCROLLBARS */
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #0a0a0c; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
         
-        /* GLASS UI */
         .glass {
             background: rgba(13, 13, 18, 0.7);
             backdrop-filter: blur(12px);
@@ -50,7 +46,6 @@
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
         }
         
-        /* EFFECTS */
         .scanline {
             width: 100%; height: 2px; background: rgba(0, 229, 255, 0.5);
             position: absolute; top: 0;
@@ -62,9 +57,8 @@
             box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
             border-color: rgba(0, 229, 255, 0.5);
         }
-        
-        .pulse-text { animation: ptext 2s infinite; }
-        @keyframes ptext { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .pulse-text { animation: ptext 1s infinite alternate; }
+        @keyframes ptext { from { opacity: 1; text-shadow: 0 0 10px cyan; } to { opacity: 0.5; text-shadow: none; } }
     </style>
 </head>
 <body class="font-hud min-h-screen flex flex-col relative selection:bg-primary selection:text-black bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#111] to-bg">
@@ -73,116 +67,95 @@
     <header class="border-b border-white/10 bg-bg/95 backdrop-blur z-50 sticky top-0 h-16">
         <div class="max-w-7xl mx-auto px-6 h-full flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 border border-primary/30 bg-primary/10 flex items-center justify-center font-bold text-primary rounded tech-box shadow-[0_0_10px_rgba(0,229,255,0.1)]">π²</div>
+                <div class="w-8 h-8 border border-primary/30 bg-primary/10 flex items-center justify-center font-bold text-primary rounded shadow-[0_0_10px_rgba(0,229,255,0.1)]">π²</div>
                 <div class="flex flex-col">
                     <h1 class="font-bold tracking-[0.2em] text-sm text-white leading-none">SENTINEL</h1>
-                    <span class="text-[9px] text-primary uppercase tracking-widest leading-none mt-0.5">Architect Edition</span>
+                    <span class="text-[9px] text-primary uppercase tracking-widest leading-none mt-0.5">Architect v12.1</span>
                 </div>
             </div>
             
             <div class="flex items-center gap-6">
                  <div class="hidden md:block text-[9px] font-mono text-dim tracking-wider">
-                     <span class="mr-4">USL STATUS: <span class="text-success pulse-text">ONLINE</span></span>
-                     <span>VERIFIER: <span class="text-white">K-FRAMEWORK</span></span>
+                     <span class="mr-4">USL STATUS: <span class="text-success">ONLINE</span></span>
+                     <button onclick="toggleLang()" id="langBtn" class="border border-white/10 px-2 py-1 rounded hover:bg-white/5 transition text-gray-400">EN / RU</button>
                  </div>
-                 <button onclick="toggleLang()" id="langBtn" class="font-mono text-[10px] border border-white/10 px-3 py-1.5 rounded hover:bg-white/5 transition text-gray-400">EN / RU</button>
             </div>
         </div>
     </header>
 
-    <!-- MAIN GRID -->
     <main class="flex-grow p-4 md:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- [LEFT] CONFIG PANEL (3 cols) -->
+        <!-- CONFIG -->
         <aside class="lg:col-span-3 flex flex-col gap-4">
-            <div class="glass p-5 rounded-lg flex flex-col gap-4 relative overflow-hidden group">
-                <!-- Status Stripe -->
+            <div class="glass p-5 rounded-lg flex flex-col gap-4 relative overflow-hidden">
                 <div class="absolute left-0 top-0 bottom-0 w-1 bg-dim transition-colors duration-500" id="statusStripe"></div>
-                
                 <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest pl-3">Uplink Config</h2>
 
-                <!-- Input View -->
+                <!-- Input -->
                 <div id="setupView" class="space-y-3 pl-3">
-                    <div class="text-[9px] text-dim font-mono border-l border-white/10 pl-2">
-                        ⚠ Burner Wallets only.<br>Keys stored in browser RAM.
+                    <div class="text-[9px] text-dim font-mono border-l border-white/10 pl-2">⚠ Burner Wallets only.</div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] text-primary uppercase font-bold">Address</label>
+                        <input type="text" id="inp_addr" class="w-full bg-black/50 border border-white/10 p-2 text-[10px] font-mono rounded text-white focus:border-primary focus:outline-none transition" placeholder="set1...">
                     </div>
                     <div class="space-y-1">
-                        <label class="text-[9px] text-primary uppercase font-bold">Target Address</label>
-                        <input type="text" id="inp_addr" class="w-full bg-black/50 border border-white/10 p-2 text-[10px] font-mono rounded text-white focus:border-primary focus:outline-none placeholder-gray-700 transition" placeholder="set1...">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[9px] text-primary uppercase font-bold">Private Key</label>
-                        <input type="password" id="inp_pk" class="w-full bg-black/50 border border-white/10 p-2 text-[10px] font-mono rounded text-white focus:border-primary focus:outline-none placeholder-gray-700 transition" placeholder="0x...">
+                        <label class="text-[9px] text-primary uppercase font-bold">Key</label>
+                        <input type="password" id="inp_pk" class="w-full bg-black/50 border border-white/10 p-2 text-[10px] font-mono rounded text-white focus:border-primary focus:outline-none transition" placeholder="0x...">
                     </div>
                     <button onclick="initConnection()" class="w-full bg-white/5 border border-white/10 hover:bg-primary hover:text-black hover:border-primary text-primary font-bold text-[10px] py-2 rounded transition mt-1 uppercase tracking-wider">
-                        Initialize
+                        Connect
                     </button>
                 </div>
 
-                <!-- Connected View -->
-                <div id="connectedView" class="hidden pl-3 py-2 animate-pulse">
-                    <div class="text-[10px] text-gray-500 uppercase mb-1">Active Identity</div>
+                <!-- Connected -->
+                <div id="connectedView" class="hidden pl-3 py-2">
+                    <div class="text-[10px] text-gray-500 uppercase mb-1">Active ID</div>
                     <div id="display_addr" class="font-mono text-[10px] text-white bg-black/30 p-2 rounded mb-3 border border-white/5 truncate">...</div>
-                    <button onclick="disconnect()" class="text-[10px] text-danger/70 hover:text-danger border-b border-danger/30 hover:border-danger pb-0.5 transition uppercase tracking-wider">Terminate Link</button>
+                    <button onclick="disconnect()" class="text-[10px] text-danger/70 hover:text-danger border-b border-danger/30 hover:border-danger pb-0.5 transition uppercase tracking-wider">Disconnect</button>
                 </div>
             </div>
             
-            <!-- Proxy Status -->
             <div class="glass p-4 rounded-lg pl-6">
-                <h3 class="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-3">Tunnel Nodes</h3>
+                <h3 class="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-3">Gateways</h3>
                 <div class="space-y-2">
                     <div class="flex justify-between items-center text-[9px] font-mono">
-                        <span class="text-dim">CORS GATEWAY A</span>
-                        <span id="gw_a" class="text-dim bg-white/5 px-2 rounded">IDLE</span>
+                        <span class="text-dim">CORS A</span> <span id="gw_a" class="text-dim bg-white/5 px-2 rounded">IDLE</span>
                     </div>
                     <div class="flex justify-between items-center text-[9px] font-mono">
-                        <span class="text-dim">CORS GATEWAY B</span>
-                        <span id="gw_b" class="text-dim bg-white/5 px-2 rounded">IDLE</span>
+                        <span class="text-dim">CORS B</span> <span id="gw_b" class="text-dim bg-white/5 px-2 rounded">IDLE</span>
                     </div>
                 </div>
             </div>
         </aside>
 
-        <!-- [CENTER] DASHBOARD (6 cols) -->
+        <!-- DASHBOARD -->
         <section class="lg:col-span-6 flex flex-col gap-4">
-            
-            <!-- PIPELINE VISUALIZATION -->
+            <!-- PIPELINE -->
             <div class="glass h-16 rounded-lg flex items-center justify-between px-4 sm:px-8 border-t border-white/5">
-                <!-- User Node -->
                 <div class="flex flex-col items-center w-8 z-10">
-                    <div id="p_1" class="w-2.5 h-2.5 bg-dim rounded-full transition-all duration-300"></div>
-                    <span class="text-[8px] text-dim mt-2 uppercase tracking-wide">Init</span>
+                    <div id="p_1" class="w-2.5 h-2.5 bg-dim rounded-full transition-all duration-300"></div><span class="text-[8px] text-dim mt-2 uppercase tracking-wide">Init</span>
                 </div>
-                <!-- Line -->
                 <div class="h-[1px] bg-white/5 flex-grow mx-1 relative overflow-hidden"><div id="l_1" class="absolute h-full w-0 bg-primary transition-all duration-500"></div></div>
-                <!-- Proxy Node -->
                 <div class="flex flex-col items-center w-8 z-10">
-                    <div id="p_2" class="w-2.5 h-2.5 bg-dim rounded-full transition-all duration-300"></div>
-                    <span class="text-[8px] text-dim mt-2 uppercase tracking-wide">Proxy</span>
+                    <div id="p_2" class="w-2.5 h-2.5 bg-dim rounded-full transition-all duration-300"></div><span class="text-[8px] text-dim mt-2 uppercase tracking-wide">Proxy</span>
                 </div>
-                <!-- Line -->
                 <div class="h-[1px] bg-white/5 flex-grow mx-1 relative overflow-hidden"><div id="l_2" class="absolute h-full w-0 bg-primary transition-all duration-500"></div></div>
-                <!-- Network Node -->
                 <div class="flex flex-col items-center w-8 z-10">
-                    <div id="p_3" class="w-2.5 h-2.5 bg-dim rounded-full transition-all duration-300"></div>
-                    <span class="text-[8px] text-dim mt-2 uppercase tracking-wide">USL</span>
+                    <div id="p_3" class="w-2.5 h-2.5 bg-dim rounded-full transition-all duration-300"></div><span class="text-[8px] text-dim mt-2 uppercase tracking-wide">USL</span>
                 </div>
-                 <!-- Line -->
-                 <div class="h-[1px] bg-white/5 flex-grow mx-1 relative overflow-hidden"><div id="l_3" class="absolute h-full w-0 bg-success transition-all duration-500"></div></div>
-                <!-- Done Node -->
+                <div class="h-[1px] bg-white/5 flex-grow mx-1 relative overflow-hidden"><div id="l_3" class="absolute h-full w-0 bg-success transition-all duration-500"></div></div>
                 <div class="flex flex-col items-center w-8 z-10">
                     <div id="p_4" class="w-3.5 h-3.5 border border-dim rounded-full flex items-center justify-center transition-all duration-300 bg-panel">
                         <i id="check_icon" class="fas fa-check text-[8px] text-transparent transition-colors"></i>
-                    </div>
-                    <span class="text-[8px] text-dim mt-2 uppercase tracking-wide">Final</span>
+                    </div><span class="text-[8px] text-dim mt-2 uppercase tracking-wide">Final</span>
                 </div>
             </div>
 
-            <!-- GRAPH AREA -->
+            <!-- CHART -->
             <div class="glass p-1 rounded-lg flex-grow min-h-[300px] relative border border-white/5 flex flex-col">
                  <div class="absolute top-4 left-5 z-20 pointer-events-none flex gap-8">
                      <div>
-                         <p class="text-[9px] text-dim uppercase tracking-widest font-bold">AVG Latency</p>
+                         <p class="text-[9px] text-dim uppercase tracking-widest font-bold">Latency</p>
                          <p class="text-xl font-mono font-bold text-white"><span id="val_avg">0</span> <span class="text-sm text-primary">ms</span></p>
                      </div>
                      <div>
@@ -195,47 +168,35 @@
                  </div>
             </div>
 
-            <!-- LOG & CONTROL -->
+            <!-- CONTROLS -->
             <div class="grid grid-cols-2 gap-4 h-40">
                 <div class="glass p-3 rounded-lg overflow-y-auto font-mono text-[9px] relative bg-black/40 border border-white/5" id="console">
                     <div class="scanline"></div>
-                    <div class="text-primary">> System Online (v12.0)</div>
-                    <div class="text-dim italic">> Awaiting Wallet Connection...</div>
+                    <div class="text-primary">> Sentinel System Loaded.</div>
+                    <div class="text-dim italic">> Waiting for connection...</div>
                 </div>
-                
                 <div class="glass p-3 rounded-lg flex flex-col justify-center gap-2">
+                    <!-- FIXED START BUTTON LOGIC HERE -->
                     <button id="btn_start" onclick="startBenchmark()" disabled class="h-full bg-white/5 border border-white/10 text-dim font-bold font-hud uppercase tracking-widest text-xs rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                         START BENCHMARK
                     </button>
-                    <button onclick="abortSequence()" class="h-8 border border-white/5 hover:border-danger/40 hover:text-danger hover:bg-danger/5 text-dim text-[9px] uppercase font-bold rounded transition">
-                        Stop System
-                    </button>
+                    <button onclick="abortSequence()" class="h-8 border border-white/5 hover:border-danger/40 hover:text-danger hover:bg-danger/5 text-dim text-[9px] uppercase font-bold rounded transition">Stop</button>
                 </div>
             </div>
         </section>
 
-        <!-- [RIGHT] INFO FEED (3 cols) -->
+        <!-- RIGHT INFO -->
         <aside class="lg:col-span-3 h-full">
             <div class="glass h-full rounded-lg p-5 border-t-2 border-accent flex flex-col relative overflow-hidden">
-                <!-- Header -->
-                <div class="flex justify-between items-start mb-6">
-                    <h3 class="text-[10px] font-bold text-accent uppercase tracking-widest flex items-center gap-2">
-                        <i class="fas fa-layer-group"></i> Info Feed
-                    </h3>
-                    <div class="text-[10px] font-mono text-dim" id="feed_idx">00</div>
-                </div>
-
-                <!-- ROTATING CONTENT -->
-                <div id="info_container" class="flex-grow flex items-center justify-center transition-opacity duration-500">
+                <h3 class="text-[10px] font-bold text-accent uppercase tracking-widest mb-6">Info Feed</h3>
+                <div id="info_container" class="flex-grow flex items-center justify-center transition-opacity duration-500 opacity-100">
                     <div class="text-left w-full">
-                        <h4 id="info_title" class="text-sm font-bold text-white mb-2">Welcome</h4>
+                        <h4 id="info_title" class="text-sm font-bold text-white mb-2">Standby</h4>
                         <div id="info_desc" class="text-[11px] text-gray-400 font-mono leading-relaxed h-24">
-                            This panel provides educational insights into Pi Squared technology during diagnostics. Connect wallet to activate.
+                            Connect your wallet to begin diagnostics and data analysis.
                         </div>
                     </div>
                 </div>
-                
-                <!-- EXPORT BUTTON -->
                 <div class="mt-auto border-t border-white/5 pt-4">
                      <button onclick="downloadCSV()" id="btn_exp" class="hidden w-full bg-success/10 border border-success/30 hover:bg-success/20 text-success text-[10px] py-3 rounded transition uppercase font-bold flex items-center justify-center gap-2">
                          <i class="fas fa-file-export"></i> Download CSV
@@ -246,11 +207,6 @@
 
     </main>
 
-    <footer class="text-center py-6 text-[9px] text-dim opacity-50 uppercase font-mono tracking-widest">
-        Unofficial Pi Squared Community Tool v12.0
-    </footer>
-
-    <!-- LOGIC (RE-WRITTEN TO BE ROBUST) -->
     <script>
         // CONFIG
         const ENDPOINT = "https://api.wallet.fastset.xyz/api/transferToken";
@@ -260,108 +216,85 @@
         ];
         const TID = "0xfa575e7000000000000000000000000000000000000000000000000000000000";
 
-        // GLOBAL APP STATE (SINGLE TRUTH SOURCE)
+        // APP STATE
         let App = {
             isConnected: false,
             isRunning: false,
             wallet: { addr: '', key: '' },
             logs: [],
             okCount: 0,
-            failCount: 0,
             infoTimer: null,
             lang: 'en'
         };
 
-        // CONTENT
-        const INFO_CONTENT = {
+        const INFO = {
             en: [
-                {t: "Universal Settlement (USL)", d: "Pi2 acts as a universal layer for truth, verifying transactions from any chain (ETH, Cosmos) using Zero-Knowledge proofs."},
-                {t: "FastSet Consensus", d: "You are testing the 'FastSet' consensus. It achieves sub-second finality by decoupling dissemination from execution."},
-                {t: "Proof-of-Proof", d: "Pi Squared doesn't re-run code. It recursively verifies the mathematical *proof* that the code ran correctly."},
-                {t: "Correct-by-Construction", d: "Using the K-Framework, Pi2 ensures formal verification of semantics. The logic is guaranteed by math, not just trust."},
-                {t: "Network Latency", d: "The dashboard tunnels traffic through CORS proxies. High latency shown here is likely the proxy bottleneck, not Pi2's speed."}
+                {t: "Proof-of-Proof", d: "Pi Squared verifies validity proofs instead of re-execution. This allows scalability."},
+                {t: "FastSet", d: "Sub-second finality is achieved by separating data dissemination from consensus."},
+                {t: "Universal Settlement", d: "Pi2 acts as a universal truth layer for any blockchain using ZK-proofs."},
+                {t: "Latency Note", d: "High latency is likely due to the public HTTP Proxy tunnel, not the blockchain itself."}
             ],
             ru: [
-                {t: "Universal Settlement (USL)", d: "Pi2 действует как универсальный слой правды, проверяя транзакции любых сетей через ZK-доказательства."},
-                {t: "FastSet Консенсус", d: "Вы тестируете FastSet. Он достигает мгновенной финализации, разделяя исполнение и распространение данных."},
-                {t: "Proof-of-Proof", d: "Pi2 не перезапускает код. Он рекурсивно проверяет *доказательство* того, что код был выполнен верно."},
-                {t: "Формальная Верификация", d: "Используя K-Framework, Pi2 гарантирует, что семантика кода математически верна."},
-                {t: "Задержка Сети", d: "Мы используем прокси-туннели для веб-теста. Задержки на графике чаще вызваны прокси, чем самой сетью Pi2."}
+                {t: "Proof-of-Proof", d: "Pi2 проверяет доказательства, а не перезапускает транзакции."},
+                {t: "FastSet", d: "Мгновенная финализация (<1с) за счет разделения консенсуса."},
+                {t: "Universal Settlement", d: "Универсальный слой расчетов для любых сетей через ZK."},
+                {t: "Примечание", d: "Задержки вызваны прокси-туннелем. Сам блокчейн работает быстрее."}
             ]
         };
 
         let myChart;
 
-        // --- 1. INITIALIZATION ---
         window.onload = () => {
             initChart();
-            const savedAddr = localStorage.getItem('pi2_addr');
-            const savedKey = localStorage.getItem('pi2_key');
-            if (savedAddr && savedKey) {
-                App.wallet.addr = savedAddr;
-                App.wallet.key = savedKey;
-                connectWallet();
+            const sa = localStorage.getItem('pi2_addr');
+            const sk = localStorage.getItem('pi2_key');
+            if(sa && sk) {
+                document.getElementById('inp_addr').value = sa;
+                document.getElementById('inp_pk').value = sk;
+                initConnection();
             }
         };
 
-        // --- 2. CONNECTION HANDLERS ---
         function initConnection() {
             const addr = document.getElementById('inp_addr').value.trim();
             const key = document.getElementById('inp_pk').value.trim();
+            if(!addr || !key) return alert("Fill fields!");
             
-            if (!addr || !key) return alert("Please fill in fields");
-            if (!addr.startsWith('set1')) return alert("Address must start with 'set1'");
-            if (!key.startsWith('0x')) return alert("Key must start with '0x'");
-
             App.wallet = { addr, key };
             localStorage.setItem('pi2_addr', addr);
             localStorage.setItem('pi2_key', key);
-            connectWallet();
-            log("Credentials Saved.", "ok");
-        }
-
-        function connectWallet() {
+            
             App.isConnected = true;
-            updateUI(); // REFRESH ALL UI
+            updateUI();
+            log("Connected. Ready to test.", "ok");
         }
 
         function disconnect() {
-            App.isConnected = false;
-            App.wallet = { addr: '', key: '' };
             localStorage.clear();
+            App.isConnected = false;
             updateUI();
-            log("Disconnected.", "norm");
         }
 
-        function toggleLang() {
-            App.lang = App.lang === 'en' ? 'ru' : 'en';
-            document.getElementById('langBtn').innerText = App.lang.toUpperCase() + " / " + (App.lang === 'en' ? 'RU' : 'EN');
-            renderInfoCard(0);
-        }
-
-        // --- 3. CORE LOGIC (START BUTTON FIX HERE) ---
         function updateUI() {
-            const sView = document.getElementById('setupView');
-            const cView = document.getElementById('connectedView');
+            const setup = document.getElementById('setupView');
+            const conn = document.getElementById('connectedView');
             const btn = document.getElementById('btn_start');
             const stripe = document.getElementById('statusStripe');
-            
-            if (App.isConnected) {
-                // HIDE Setup, SHOW Connected
-                sView.classList.add('hidden');
-                cView.classList.remove('hidden');
+
+            if(App.isConnected) {
+                setup.classList.add('hidden');
+                conn.classList.remove('hidden');
                 document.getElementById('display_addr').innerText = App.wallet.addr;
-                stripe.classList.remove('bg-dim'); stripe.classList.add('bg-primary');
+                stripe.classList.replace('bg-dim', 'bg-primary');
                 
-                // UNLOCK BUTTON (IMPORTANT)
+                // UNLOCK START BUTTON
                 btn.disabled = false;
                 btn.classList.remove('bg-white/5', 'text-dim');
                 btn.classList.add('bg-primary', 'text-black', 'btn-active');
             } else {
-                // SHOW Setup, HIDE Connected
-                sView.classList.remove('hidden');
-                cView.classList.add('hidden');
-                stripe.classList.remove('bg-primary'); stripe.classList.add('bg-dim');
+                setup.classList.remove('hidden');
+                conn.classList.add('hidden');
+                stripe.classList.replace('bg-primary', 'bg-dim');
                 
                 // LOCK BUTTON
                 btn.disabled = true;
@@ -371,196 +304,151 @@
             }
         }
 
-        // --- 4. BENCHMARK ENGINE ---
+        function toggleLang() {
+            App.lang = App.lang==='en'?'ru':'en';
+            renderCard(0);
+        }
+
+        // --- CORE ---
         async function startBenchmark() {
-            if (App.isRunning) return;
-            App.isRunning = true;
-            App.logs = []; App.okCount = 0;
-            resetChart(); resetPipeline();
+            if(App.isRunning) return;
+            App.isRunning = true; App.logs = []; App.okCount=0;
+            resetChart(); visualizeStep(0);
             
-            // UI RUN STATE
             const btn = document.getElementById('btn_start');
-            btn.innerText = "RUNNING...";
+            btn.innerText = "TESTING...";
             btn.classList.add('pulse-text');
             document.getElementById('btn_exp').classList.add('hidden');
+            
+            startInfo();
 
-            startInfoFeed(); // Start slow education rotation
+            for(let i=1; i<=20; i++) {
+                if(!App.isRunning) break;
 
-            const TX_LIMIT = 20;
-
-            for (let i = 1; i <= TX_LIMIT; i++) {
-                if (!App.isRunning) break;
-
-                const pIdx = i % 2; // Alternate Proxies
+                const pIdx = i % 2;
                 uiProxy(pIdx);
                 const url = PROXIES[pIdx](ENDPOINT);
-                
-                // STEP 1: INIT
                 visualizeStep(1);
-                log(`TX #${i}: Broadcasting...`, "norm");
-
-                const startTime = Date.now();
                 
+                log(`TX #${i} Broadcasting...`, "norm");
+                const start = Date.now();
+                visualizeStep(2);
+
                 try {
-                    // STEP 2: TUNNEL
-                    visualizeStep(2);
-                    
-                    const resp = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            sender: App.wallet.addr, recipient: App.wallet.addr,
-                            amount: "1", tokenId: TID, privateKey: App.wallet.key
-                        })
+                    const res = await fetch(url, {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ sender: App.wallet.addr, recipient: App.wallet.addr, amount:"1", tokenId:TID, privateKey:App.wallet.key })
                     });
-
-                    if (!resp.ok && resp.status !== 200) throw new Error("HTTP " + resp.status);
-
-                    // STEP 3: SUCCESS
-                    const ms = Date.now() - startTime;
-                    visualizeStep(3);
-                    visualizeStep(4);
                     
-                    App.logs.push({id: i, ms: ms});
+                    if(!res.ok) throw new Error(res.status);
+
+                    visualizeStep(3); visualizeStep(4);
+                    const ms = Date.now() - start;
                     App.okCount++;
-
-                    log(`> Confirmed: ${ms}ms`, "ok");
+                    App.logs.push({id:i, ms:ms});
+                    
+                    log(`> OK: ${ms}ms`, "ok");
                     updateChart(i, ms);
-                    updateAvg();
-
-                    await sleep(2000); // 2s delay
-                    visualizeStep(0); // Reset Lines
-
+                    
+                    await sleep(2000);
+                    visualizeStep(0);
+                    
                 } catch(e) {
-                    log(`> Retrying connection...`, "err");
-                    await sleep(3000); // Retry delay
+                    log(`> Fail. Retrying...`, "err");
+                    await sleep(3000);
                     visualizeStep(0);
                 }
             }
-
             abortSequence();
         }
 
         function abortSequence() {
             App.isRunning = false;
-            stopInfoFeed();
-            visualizeStep(0);
-            updateUI(); // Resets button state
-            
-            if (App.okCount > 0) document.getElementById('btn_exp').classList.remove('hidden');
-            log("Benchmark Complete.", "norm");
+            stopInfo();
+            updateUI(); // Resets button
+            if(App.okCount > 0) document.getElementById('btn_exp').classList.remove('hidden');
+            log("Sequence Ended.", "dim");
         }
 
-        // --- 5. VISUALIZATIONS ---
-        function visualizeStep(step) {
-            // Colors
+        function visualizeStep(s) {
             const ACT = "bg-primary shadow-[0_0_8px_cyan]";
-            const DIM = "bg-dim";
+            const OFF = "bg-dim shadow-none";
             const SUC = "bg-success border-success shadow-[0_0_10px_lime]";
             
-            // Nodes
-            document.getElementById('p_1').className = step >= 1 ? `w-2.5 h-2.5 rounded-full ${ACT} transition` : `w-2.5 h-2.5 rounded-full ${DIM} transition`;
-            document.getElementById('p_2').className = step >= 2 ? `w-2.5 h-2.5 rounded-full ${ACT} transition` : `w-2.5 h-2.5 rounded-full ${DIM} transition`;
-            document.getElementById('p_3').className = step >= 3 ? `w-2.5 h-2.5 rounded-full ${ACT} transition` : `w-2.5 h-2.5 rounded-full ${DIM} transition`;
+            const set = (id, active) => document.getElementById(id).className = `w-2.5 h-2.5 rounded-full transition ${active ? ACT : OFF}`;
+            set('p_1', s>=1); set('p_2', s>=2); set('p_3', s>=3);
             
-            // Checkmark Node
-            if(step >= 4) {
-                 document.getElementById('p_4').className = `w-3.5 h-3.5 border border-success rounded-full flex items-center justify-center ${SUC} transition`;
-                 document.getElementById('check_icon').className = "fas fa-check text-[7px] text-black";
-            } else {
-                 document.getElementById('p_4').className = `w-3.5 h-3.5 border border-dim rounded-full flex items-center justify-center bg-panel transition`;
-                 document.getElementById('check_icon').className = "fas fa-check text-[7px] text-transparent";
-            }
-
+            // Final node
+            const p4 = document.getElementById('p_4');
+            const ico = document.getElementById('check_icon');
+            if(s>=4) { p4.className=`w-3.5 h-3.5 rounded-full flex items-center justify-center ${SUC}`; ico.classList.remove('text-transparent'); ico.classList.add('text-black'); }
+            else { p4.className=`w-3.5 h-3.5 border border-dim rounded-full flex items-center justify-center bg-panel`; ico.classList.add('text-transparent'); }
+            
             // Lines
-            document.getElementById('l_1').style.width = step >= 2 ? "100%" : "0%";
-            document.getElementById('l_2').style.width = step >= 3 ? "100%" : "0%";
-            document.getElementById('l_3').style.width = step >= 4 ? "100%" : "0%";
+            const w = (st, id) => document.getElementById(id).style.width = s>=st ? "100%" : "0%";
+            w(2, 'l_1'); w(3, 'l_2'); w(4, 'l_3');
         }
 
-        function uiProxy(idx) {
-            const ga = document.getElementById('gw_a');
-            const gb = document.getElementById('gw_b');
-            
-            if(idx === 0) {
-                ga.innerText = "ACTIVE"; ga.className = "text-dim text-[9px] bg-primary text-black px-2 rounded font-bold";
-                gb.innerText = "STANDBY"; gb.className = "text-dim text-[9px] bg-white/5 text-dim px-2 rounded";
-            } else {
-                gb.innerText = "ACTIVE"; gb.className = "text-dim text-[9px] bg-primary text-black px-2 rounded font-bold";
-                ga.innerText = "STANDBY"; ga.className = "text-dim text-[9px] bg-white/5 text-dim px-2 rounded";
-            }
+        function startInfo() {
+            let i=0; renderCard(0);
+            App.infoTimer = setInterval(()=>{ i++; renderCard(i); }, 7000);
         }
+        function stopInfo() { clearInterval(App.infoTimer); renderCard(-1); }
 
-        // --- 6. INFO FEED LOGIC ---
-        function startInfoFeed() {
-            let idx = 0; renderInfoCard(0);
-            App.infoTimer = setInterval(() => { idx++; renderInfoCard(idx); }, 7000);
-        }
-        function stopInfoFeed() { clearInterval(App.infoTimer); renderInfoCard(-1); }
-
-        function renderInfoCard(idx) {
+        function renderCard(i) {
             const box = document.getElementById('info_container');
             const title = document.getElementById('info_title');
             const desc = document.getElementById('info_desc');
-            const num = document.getElementById('feed_idx');
             
-            // Simple Fade
             box.classList.add('opacity-0');
-            setTimeout(() => {
-                if (idx === -1) {
-                    title.innerText = "Diagnostics Finished";
-                    desc.innerText = "Review the chart above or export the CSV data.";
-                } else {
-                    const items = INFO_CONTENT[App.lang];
-                    const item = items[idx % items.length];
-                    title.innerText = item.t;
-                    desc.innerText = item.d;
-                    num.innerText = (idx % items.length + 1).toString().padStart(2, '0');
+            setTimeout(()=>{
+                if(i === -1) { title.innerText="Done"; desc.innerText="Check results above."; }
+                else {
+                    const data = INFO[App.lang];
+                    const item = data[i % data.length];
+                    title.innerText = item.t; desc.innerText = item.d;
                 }
                 box.classList.remove('opacity-0');
             }, 300);
         }
 
-        // --- 7. UTILS & HELPERS ---
-        function updateAvg() {
-            if(App.logs.length === 0) return;
-            const sum = App.logs.reduce((a,b)=>a+b.ms, 0);
-            const avg = (sum / App.logs.length).toFixed(0);
-            document.getElementById('val_avg').innerText = avg;
-            document.getElementById('val_tx').innerText = App.logs.length;
+        function uiProxy(idx) {
+            const a = document.getElementById('gw_a'); const b = document.getElementById('gw_b');
+            const active = "text-[9px] bg-primary text-black px-2 rounded font-bold";
+            const idle = "text-[9px] bg-white/5 text-dim px-2 rounded";
+            a.className = idx===0 ? active : idle; a.innerText = idx===0?"ACTIVE":"IDLE";
+            b.className = idx===1 ? active : idle; b.innerText = idx===1?"ACTIVE":"IDLE";
         }
 
-        function log(msg, type) {
-            const div = document.createElement('div');
-            const clr = type==='ok'?'text-success':type==='err'?'text-danger':type==='norm'?'text-white':'text-dim';
-            div.innerHTML = `<span class="opacity-50 text-[9px] mr-2">${new Date().toLocaleTimeString()}</span><span class="${clr}">${msg}</span>`;
-            document.getElementById('console').prepend(div);
+        function log(m, t) {
+            const d = document.createElement('div');
+            const col = t==='ok'?'text-success':t==='err'?'text-danger':t==='norm'?'text-white':'text-dim';
+            d.innerHTML = `<span class="opacity-50 text-[9px] mr-2">>>></span><span class="${col}">${m}</span>`;
+            document.getElementById('console').prepend(d);
         }
 
         function downloadCSV() {
-            let csv = "ID,Latency\n" + App.logs.map(r => `${r.id},${r.ms}`).join('\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'report.csv';
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            let c="ID,Latency\n"+App.logs.map(x=>`${x.id},${x.ms}`).join('\n');
+            const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));
+            a.download="report.csv"; document.body.appendChild(a); a.click(); a.remove();
         }
 
-        function resetChart() { myChart.data.labels=[]; myChart.data.datasets[0].data=[]; myChart.update(); document.getElementById('val_avg').innerText="0"; document.getElementById('val_tx').innerText="0";}
+        function resetChart() { myChart.data.labels=[]; myChart.data.datasets[0].data=[]; myChart.update(); document.getElementById('val_avg').innerText="0"; }
         function updateChart(i, ms) {
-            myChart.data.labels.push(i);
-            myChart.data.datasets[0].data.push(ms);
-            if(myChart.data.labels.length > 20) { myChart.data.labels.shift(); myChart.data.datasets[0].data.shift(); }
+            myChart.data.labels.push(i); myChart.data.datasets[0].data.push(ms);
+            document.getElementById('val_tx').innerText=i;
+            document.getElementById('val_avg').innerText=(App.logs.reduce((a,b)=>a+b.ms,0)/App.logs.length).toFixed(0);
+            if(myChart.data.labels.length>20){myChart.data.labels.shift();myChart.data.datasets[0].data.shift();}
             myChart.update();
         }
-        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
+        function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
         function initChart() {
-            const ctx = document.getElementById('mainChart').getContext('2d');
-            const grad = ctx.createLinearGradient(0,0,0,300); grad.addColorStop(0, 'rgba(0, 229, 255, 0.2)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
+            const ctx=document.getElementById('mainChart').getContext('2d');
+            const g=ctx.createLinearGradient(0,0,0,300); g.addColorStop(0,'rgba(0,229,255,0.2)'); g.addColorStop(1,'rgba(0,0,0,0)');
             myChart = new Chart(ctx, {
                 type: 'line',
-                data: { labels: [], datasets: [{ data: [], borderColor: '#00e5ff', borderWidth: 2, backgroundColor: grad, fill: true, tension: 0.4, pointRadius:0 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: false }, scales: { x: { display: false }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+                data: {labels:[],datasets:[{data:[],borderColor:'#00e5ff',borderWidth:2,backgroundColor:g,fill:true,tension:0.4,pointRadius:0}]},
+                options: {responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{x:{display:false},y:{grid:{color:'rgba(255,255,255,0.05)'}}}}
             });
         }
     </script>
