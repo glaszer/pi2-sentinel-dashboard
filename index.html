@@ -1,384 +1,298 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi2 Sentinel | v8.1 Micro</title>
+import os
+import time
+import requests
+import json
+import random
+import pandas as pd
+import matplotlib.pyplot as plt
+from datetime import datetime
+from colorama import init, Fore, Style, Back
+from tqdm import tqdm
+from tabulate import tabulate
+
+# Инициализация цветов
+init(autoreset=True)
+
+# --- ⚙️ ГЛОБАЛЬНЫЕ НАСТРОЙКИ ---
+
+VERSION = "6.1 Stable Community"
+API_URL = "https://api.wallet.fastset.xyz/api/transferToken"
+TOKEN_ID = "0xfa575e7000000000000000000000000000000000000000000000000000000000"
+CONFIG_FILE = "sentinel_wallet.json"
+
+# Список публичных нод Ethereum (резервирование)
+ETH_RPC_LIST = [
+    "https://rpc.ankr.com/eth",
+    "https://eth.llamarpc.com",
+    "https://cloudflare-eth.com",
+    "https://1rpc.io/eth",
+    "https://rpc.mevblocker.io"
+]
+
+HEADERS = {
+    "Content-Type": "application/json",
+    "User-Agent": f"Mozilla/5.0 Pi2Sentinel/{VERSION}",
+    "Origin": "https://wallet.fastset.xyz",
+    "Referer": "https://wallet.fastset.xyz/"
+}
+
+# --- 🧠 БАЗА ЗНАНИЙ ---
+WIKI = {
+    "USL": "Universal Settlement Layer. Pi Squared не просто блокчейн, а слой 'над' блокчейнами для проверки их корректности (ZK Verify).",
+    "FastSet": "Движок быстрой финализации (Soft Finality). Он дает пользователю мгновенный ответ (~0.5 сек), пока генерируется тяжелое ZK-доказательство.",
+    "Burner Wallet": "Метод безопасности. Мы используем временный кошелек, чтобы вы не рисковали основным приватным ключом."
+}
+
+# --- 🔧 РАБОТА С КОШЕЛЬКОМ ---
+
+def load_or_setup_wallet():
+    # Если конфиг есть — грузим
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r") as f:
+                data = json.load(f)
+                if "set1" in data.get("address", ""):
+                    return data
+        except:
+            print(Fore.RED + "⚠️ Файл конфигурации поврежден.")
+
+    # Если нет — мастер настройки
+    print(Fore.CYAN + "=" * 60)
+    print("      🔧 МАСТЕР НАСТРОЙКИ (SETUP WIZARD) 🔧")
+    print(Fore.CYAN + "=" * 60)
+    print(" 1. Зайди на https://wallet.fastset.xyz/")
+    print(" 2. Создай новый кошелек (New Wallet).")
+    print(" 3. Скопируй данные сюда (Private Key + Address).")
+    print(" ⚠️  Используй тестовый (пустой) кошелек, не основной!")
+    print("-" * 60)
+
+    while True:
+        pk = input(f"{Fore.GREEN} Вставь Private Key (0x...): {Fore.WHITE}").strip()
+        if not pk.startswith("0x") or len(pk) < 50:
+            print(Fore.RED + "❌ Ошибка! Ключ должен начинаться на '0x'.")
+            continue
+            
+        addr = input(f"{Fore.GREEN} Вставь Address (set1...): {Fore.WHITE}").strip()
+        if not addr.startswith("set1"):
+            print(Fore.RED + "❌ Ошибка! Адрес должен начинаться на 'set1'.")
+            continue
+
+        print(Fore.GREEN + "\n✅ Данные приняты!")
+        data = {"address": addr, "privateKey": pk}
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(data, f)
+        return data
+
+# --- 🌐 ДАННЫЕ ИЗ ETHEREUM MAINNET ---
+
+def get_eth_data():
+    """Получает цену газа и курс ETH через перебор RPC"""
+    print(f"\n{Fore.CYAN}📡 Получение данных из Ethereum Mainnet...", end=" ")
     
-    <!-- FONTS & LIBS -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        pi: {
-                            bg: '#020204',
-                            card: '#0b0b12',
-                            primary: '#00f2ea', // Cyan Neon
-                            accent: '#7000ff',  // Deep Violet
-                            success: '#0aff99',
-                            danger: '#ff2a6d',
-                            text: '#e2e8f0',
-                            dim: '#545975'
-                        }
-                    },
-                    fontFamily: { mono: ['"JetBrains Mono"', 'monospace'], sans: ['"Inter"', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        body { background-color: #020204; overflow-x: hidden; }
-        .glass {
-            background: rgba(11, 11, 18, 0.75);
-            backdrop-filter: blur(14px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
-        }
-        .pulse-ring { animation: ring 2s infinite; }
-        @keyframes ring {
-            0% { box-shadow: 0 0 0 0 rgba(0, 242, 234, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(0, 242, 234, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 242, 234, 0); }
-        }
-        /* Highlight animation for education box */
-        .edu-flash { animation: eduflash 0.5s ease-out; }
-        @keyframes eduflash { 0% { background-color: rgba(0, 242, 234, 0.2); } 100% { background-color: transparent; } }
-    </style>
-</head>
-<body class="text-pi-text font-sans antialiased relative selection:bg-pi-primary selection:text-black">
-
-    <canvas id="particles" class="fixed top-0 left-0 w-full h-full pointer-events-none opacity-20 z-0"></canvas>
-
-    <div class="relative z-10 max-w-7xl mx-auto px-4 py-6 min-h-screen flex flex-col">
-        <!-- HEADER -->
-        <header class="flex justify-between items-center mb-8 gap-4 glass p-4 rounded-xl">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 bg-white/5 rounded flex items-center justify-center font-bold text-lg border border-white/10">π²</div>
-                <div>
-                    <h1 class="text-xl font-black text-white">SENTINEL <span class="text-pi-primary text-xs border border-pi-primary px-1 rounded ml-1">MICRO</span></h1>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="downloadCSV()" id="btn_export" class="hidden text-[10px] bg-white/10 hover:bg-pi-success/20 px-3 py-1.5 rounded border border-white/10 transition uppercase tracking-wider font-bold">
-                    <i class="fas fa-file-csv"></i> Download Report
-                </button>
-                <button onclick="toggleLang()" class="text-[10px] font-bold border border-white/20 px-3 py-1.5 rounded hover:bg-white/10 transition uppercase">EN / RU</button>
-            </div>
-        </header>
-
-        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
-            <!-- LEFT -->
-            <aside class="lg:col-span-4 flex flex-col gap-6">
-                <!-- SETUP -->
-                <div class="glass p-5 rounded border-t-2 border-pi-primary">
-                    <h2 class="text-[10px] font-bold text-pi-dim tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
-                        <i class="fas fa-wifi text-pi-primary"></i> <span id="lbl_conf">CONNECTION</span>
-                    </h2>
-                    
-                    <div id="setupForm" class="space-y-3">
-                         <div class="p-2 bg-red-900/10 border border-red-900/30 rounded text-[10px] text-red-300">
-                             <i class="fas fa-shield-alt mr-1"></i> Use <b>Burner Wallet</b> Only (Testnet)
-                         </div>
-                        <input type="text" id="inp_addr" class="w-full bg-black/40 border-b border-white/10 p-2 text-xs font-mono focus:border-pi-primary focus:outline-none placeholder-gray-700 transition" placeholder="set1...">
-                        <input type="password" id="inp_pk" class="w-full bg-black/40 border-b border-white/10 p-2 text-xs font-mono focus:border-pi-primary focus:outline-none placeholder-gray-700 transition" placeholder="0x...">
-                        <button onclick="saveConfig()" id="btn_connect" class="w-full bg-pi-primary/10 hover:bg-pi-primary hover:text-black border border-pi-primary/50 text-pi-primary py-2 text-xs font-bold transition uppercase tracking-widest mt-2">Connect</button>
-                    </div>
-
-                    <div id="connectedView" class="hidden text-center py-2">
-                         <p class="text-[10px] text-pi-dim mb-1">TARGET IDENTITY</p>
-                         <div class="bg-pi-success/5 border border-pi-success/10 text-pi-success font-mono text-[10px] p-2 rounded mb-2 break-all" id="display_addr"></div>
-                         <button onclick="disconnect()" class="text-[10px] text-red-500 hover:text-red-400 uppercase">Disconnect</button>
-                    </div>
-                </div>
-
-                <!-- LIVE INSIGHTS -->
-                <div class="glass p-5 rounded border-t-2 border-pi-accent flex-grow flex flex-col">
-                     <h3 class="text-[10px] font-bold text-pi-dim tracking-[0.2em] uppercase mb-4 flex items-center gap-2">
-                        <i class="fas fa-brain text-pi-accent"></i> <span id="lbl_insight">AI INSIGHTS</span>
-                     </h3>
-                     <div id="insight_box" class="flex-grow flex items-center justify-center text-center p-4 bg-black/20 rounded border border-white/5 text-xs text-gray-400 italic">
-                         Waiting for benchmark data stream...
-                     </div>
-                     <div class="mt-4 flex justify-between text-[10px] text-gray-600">
-                         <span><span class="w-1.5 h-1.5 inline-block rounded-full bg-pi-success"></span> Optimal</span>
-                         <span><span class="w-1.5 h-1.5 inline-block rounded-full bg-yellow-500"></span> Normal</span>
-                         <span><span class="w-1.5 h-1.5 inline-block rounded-full bg-red-500"></span> Proxy Lag</span>
-                     </div>
-                </div>
-            </aside>
-
-            <!-- RIGHT -->
-            <section class="lg:col-span-8 flex flex-col gap-6">
-                <!-- METRICS -->
-                <div class="grid grid-cols-4 gap-4">
-                     <div class="glass p-3 text-center border border-white/5 rounded">
-                         <div class="text-[10px] text-gray-500 uppercase">Status</div>
-                         <div id="val_status" class="font-mono text-white font-bold">IDLE</div>
-                     </div>
-                     <div class="glass p-3 text-center border border-white/5 rounded">
-                         <div class="text-[10px] text-gray-500 uppercase">Last Latency</div>
-                         <div class="font-mono text-pi-primary font-bold"><span id="val_lat">0</span>ms</div>
-                     </div>
-                     <div class="glass p-3 text-center border border-white/5 rounded">
-                         <div class="text-[10px] text-gray-500 uppercase">Payload</div>
-                         <div id="val_payload" class="font-mono text-pi-accent font-bold">0.00</div>
-                     </div>
-                     <div class="glass p-3 text-center border border-white/5 rounded">
-                         <div class="text-[10px] text-gray-500 uppercase">Success</div>
-                         <div id="val_rate" class="font-mono text-pi-success font-bold">0%</div>
-                     </div>
-                </div>
-
-                <!-- CHART -->
-                <div class="glass p-4 rounded min-h-[250px] relative border border-white/5">
-                    <div class="absolute top-2 right-4 text-[10px] font-mono text-gray-600">
-                         GW: <span id="proxy_lbl">A</span>
-                    </div>
-                    <canvas id="mainChart"></canvas>
-                </div>
-
-                <!-- CONSOLE & CONTROL -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-48">
-                    <div class="md:col-span-2 glass bg-black/50 p-3 font-mono text-[10px] overflow-y-auto border border-white/5 rounded custom-scroll" id="console">
-                        <div class="text-pi-primary mb-1">> System Initialized v8.1 (Micro-Tx Patch)</div>
-                        <div class="text-gray-500">> Optimized for low balance burner wallets.</div>
-                    </div>
-
-                    <div class="glass p-4 rounded flex flex-col justify-center gap-3">
-                        <button id="btn_start" onclick="startTest()" disabled class="w-full bg-gradient-to-r from-pi-primary to-pi-accent text-black font-black text-xs py-3 rounded shadow-lg shadow-pi-primary/20 hover:scale-[1.02] active:scale-[0.98] transition disabled:opacity-20 disabled:scale-100 disabled:cursor-not-allowed uppercase tracking-wider">
-                            START BENCHMARK
-                        </button>
-                        <button onclick="stopTest()" class="text-[10px] text-pi-dim hover:text-white transition">Stop Sequence</button>
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <script>
-        // --- 📡 CONFIG ---
-        const API_URL = "https://api.wallet.fastset.xyz/api/transferToken";
-        const PROXIES = [
-            (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-            (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
-        ];
-        // Testnet token (ensure validity)
-        const TOKEN_ID = "0xfa575e7000000000000000000000000000000000000000000000000000000000";
-
-        let lang = 'en';
-        let isRunning = false;
-        let chart;
-        let stats = { ok: 0, fail: 0, history: [] };
-        let wallet = { a: '', k: '' };
-
-        // --- TXT ---
-        const TX = {
-            en: { 
-                conn: "CONNECTION", btn: "CONNECT", idle: "IDLE", run: "TESTING...", 
-                ins: "AI INSIGHTS", 
-                fast: "⚡ <b>Ultra Fast.</b> <800ms finality. Proof-of-Proof consensus is running optimally.",
-                norm: "✅ <b>Stable.</b> Standard network load. Latency is within acceptable parameters.",
-                lag: "🐢 <b>Network Lag.</b> The public CORS Proxy is throttling connections. This is not a Pi2 blockchain issue.",
-                err_500: "💸 <b>HTTP 500:</b> Check Balance! Use Micro-amounts."
-            },
-            ru: { 
-                conn: "ПОДКЛЮЧЕНИЕ", btn: "ПОДКЛЮЧИТЬ", idle: "ОЖИДАНИЕ", run: "ТЕСТ...", 
-                ins: "ЖИВОЙ АНАЛИЗ",
-                fast: "⚡ <b>Супер скорость.</b> <800мс. Консенсус Proof-of-Proof работает идеально.",
-                norm: "✅ <b>Стабильно.</b> Обычная нагрузка на сеть.",
-                lag: "🐢 <b>Лаг Прокси.</b> Публичный шлюз медленно отвечает. Сам блокчейн в порядке.",
-                err_500: "💸 <b>Ошибка 500:</b> Проверь баланс! (Micro-mode on)."
-            }
-        };
-
-        // --- INIT ---
-        window.onload = () => {
-            initParticles();
-            initChart();
-            if(localStorage.getItem('pi2_a')) {
-                wallet.a = localStorage.getItem('pi2_a');
-                wallet.k = localStorage.getItem('pi2_k');
-                toggleUI(true);
-            }
-        };
-
-        function toggleLang() {
-            lang = lang === 'en' ? 'ru' : 'en';
-            document.getElementById('lbl_conf').innerText = TX[lang].conn;
-            document.getElementById('btn_connect').innerText = TX[lang].btn;
-            document.getElementById('lbl_insight').innerText = TX[lang].ins;
-        }
-
-        function saveConfig() {
-            const a = document.getElementById('inp_addr').value.trim();
-            const k = document.getElementById('inp_pk').value.trim();
-            if(!a.startsWith('set1') || !k.startsWith('0x')) return alert("Error: Addr=set1..., Key=0x...");
-            localStorage.setItem('pi2_a', a); localStorage.setItem('pi2_k', k);
-            wallet = { a, k };
-            toggleUI(true);
-        }
-
-        function disconnect() { localStorage.clear(); wallet={a:'',k:''}; toggleUI(false); }
-        function toggleUI(act) {
-            const f = document.getElementById('setupForm'), v = document.getElementById('connectedView'), b = document.getElementById('btn_start');
-            if(act) { f.classList.add('hidden'); v.classList.remove('hidden'); b.disabled = false; document.getElementById('display_addr').innerText = wallet.a; }
-            else { f.classList.remove('hidden'); v.classList.add('hidden'); b.disabled = true; }
-        }
-
-        // --- ⚡ CORE: BENCHMARK v8.1 ---
-        async function startTest() {
-            if(isRunning) return;
-            isRunning = true;
-            stats = { ok: 0, fail: 0, history: [] };
-            chart.data.labels = []; chart.data.datasets[0].data = []; chart.update();
-            updateStatus(TX[lang].run, true);
+    fallback = {
+        "gwei": 15.0, "cost_usd": 4.20, "source": "ESTIMATE (Offline)"
+    }
+    
+    for rpc in ETH_RPC_LIST:
+        try:
+            payload = {"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":1}
+            resp = requests.post(rpc, json=payload, headers={"Content-Type": "application/json"}, timeout=3)
+            data = resp.json()
             
-            document.getElementById('btn_export').classList.add('hidden');
-
-            const TX_MAX = 20;
-            let proxyIdx = 0;
-
-            for(let i=1; i<=TX_MAX; i++) {
-                if(!isRunning) break;
-
-                // FIX: Micro-Amounts (0.0001 - 0.005) to avoid Insufficient Funds 500 Error
-                const amount = (Math.random() * (0.005 - 0.0001) + 0.0001).toFixed(6);
-                
-                // Get Proxy
-                const activeProxy = PROXIES[proxyIdx % PROXIES.length];
-                const url = activeProxy(API_URL);
-                document.getElementById('proxy_lbl').innerText = (proxyIdx % PROXIES.length === 0) ? 'A' : 'B';
-                
-                // Update UI
-                document.getElementById('val_payload').innerText = amount;
-                log(`Broadcasting <b>${amount}</b> Pi2... (TX #${i})`, 'dim');
-
-                const startT = Date.now();
-
-                try {
-                    const resp = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            sender: wallet.a, recipient: wallet.a, 
-                            amount: amount, 
-                            tokenId: TOKEN_ID, privateKey: wallet.k
-                        })
-                    });
-
-                    // HANDLER FOR HTTP 500 (Insufficient Funds)
-                    if(resp.status === 500) {
-                         throw new Error("HTTP 500 (Check Balance?)");
-                    }
-
-                    if(resp.ok) {
-                        const ms = Date.now() - startT;
-                        stats.ok++;
-                        
-                        // Analytics
-                        stats.history.push({id:i, amount, latency:ms, status:'OK'});
-                        
-                        log(`✅ Confirmed: <b>${ms}ms</b>`, 'ok');
-                        updateChart(i, ms);
-                        updateMetrics(ms);
-                        doInsight(ms, false);
-                        
-                        await sleep(2500); // 2.5s Delay
-                    } else {
-                        throw new Error(`Status ${resp.status}`);
-                    }
-
-                } catch(e) {
-                    stats.fail++;
-                    stats.history.push({id:i, amount, latency:0, status:'FAIL'});
-                    
-                    let cleanErr = e.message;
-                    if(cleanErr.includes("Failed to fetch")) cleanErr = "Proxy Conn Reset";
-                    
-                    log(`❌ Error: ${cleanErr}`, 'err');
-                    
-                    if(cleanErr.includes("500")) doInsight(0, true); // Specific hint for 500
-                    
-                    // Rotate
-                    proxyIdx++;
-                    log(`⚠️ Switching Proxy Gateway...`, 'dim');
-                    await sleep(3500);
-                }
-            }
-            stopTest();
-        }
-
-        function stopTest() {
-            isRunning = false;
-            updateStatus(TX[lang].idle, false);
-            log("Sequence Complete.", 'ok');
-            document.getElementById('btn_export').classList.remove('hidden');
-        }
-
-        // --- HELPERS ---
-        function doInsight(ms, is500) {
-            const b = document.getElementById('insight_box');
-            b.classList.add('edu-flash');
-            setTimeout(()=>b.classList.remove('edu-flash'), 500);
+            wei = int(data["result"], 16)
+            gwei = wei / 10**9
             
-            if(is500) { b.innerHTML = TX[lang].err_500; b.className = "flex-grow flex items-center justify-center text-center p-4 bg-red-900/20 rounded border border-red-500/50 text-xs text-red-200"; return; }
+            # Экономика: 21000 газа * цена * курс ($3600 хардкод)
+            eth_price = 3600
+            cost_eth = (21000 * wei) / 10**18
+            cost_usd = cost_eth * eth_price
             
-            b.className = "flex-grow flex items-center justify-center text-center p-4 bg-black/20 rounded border border-white/5 text-xs text-gray-300";
-            if(ms < 800) b.innerHTML = TX[lang].fast;
-            else if(ms < 2500) b.innerHTML = TX[lang].norm;
-            else b.innerHTML = TX[lang].lag;
-        }
+            print(f"{Fore.GREEN}OK ✅ ({rpc.split('/')[2]})")
+            return {"gwei": gwei, "cost_usd": cost_usd, "source": "LIVE MAINNET"}
+            
+        except:
+            continue
+            
+    print(f"{Fore.RED}FAIL ❌ (Используем резервные данные)")
+    return fallback
 
-        function updateMetrics(ms) {
-            document.getElementById('val_lat').innerText = ms;
-            const rate = ((stats.ok / (stats.ok+stats.fail))*100).toFixed(0);
-            document.getElementById('val_rate').innerText = rate + "%";
-            document.getElementById('val_lat').className = (ms<1000) ? "font-mono text-pi-success font-bold" : "font-mono text-yellow-500 font-bold";
-        }
+# --- 🧪 ЯДРО ТРАНЗАКЦИЙ ---
 
-        function updateChart(lbl, val) {
-            chart.data.labels.push(lbl);
-            chart.data.datasets[0].data.push(val);
-            if(chart.data.labels.length > 20) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
-            chart.update();
+def send_tx(wallet):
+    # Рандомизация суммы (Anti-Bot Pattern)
+    amount = str(random.randint(1, 999))
+    
+    start = time.time()
+    try:
+        payload = {
+            "sender": wallet["address"],
+            "recipient": wallet["address"],
+            "amount": amount,
+            "tokenId": TOKEN_ID,
+            "privateKey": wallet["privateKey"]
         }
+        r = requests.post(API_URL, json=payload, headers=HEADERS, timeout=10)
+        latency = time.time() - start
+        
+        return {
+            "success": r.status_code == 200,
+            "latency": latency,
+            "code": r.status_code,
+            "amount": amount
+        }
+    except Exception as e:
+        return {"success": False, "latency": 0, "code": "NET", "amount": 0}
 
-        function updateStatus(txt, run) {
-            const el = document.getElementById('val_status');
-            el.innerText = txt;
-            el.className = run ? "font-mono text-pi-primary font-bold animate-pulse" : "font-mono text-white font-bold";
-            const btn = document.getElementById('btn_start');
-            if(run) { btn.classList.add('pulse-ring'); btn.innerText = "TESTING..."; }
-            else { btn.classList.remove('pulse-ring'); btn.innerText = "START BENCHMARK"; }
-        }
+# --- 📊 ОТРИСОВКА ГРАФИКОВ ---
 
-        function log(m, t) {
-            const d = document.createElement('div');
-            d.innerHTML = `<span class="opacity-40 text-[9px] mr-2">${new Date().toLocaleTimeString().split(' ')[0]}</span>${m}`;
-            d.className = "mb-1 pl-2 border-l " + (t==='ok'?"border-pi-success text-pi-success":t==='err'?"border-pi-danger text-pi-danger":"border-pi-dim text-pi-dim");
-            document.getElementById('console').prepend(d);
-        }
-        function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
-        function downloadCSV() {
-            let c = "ID,Amt,Lat,Stat\n" + stats.history.map(r=>`${r.id},${r.amount},${r.latency},${r.status}`).join('\n');
-            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([c],{type:'text/csv'}));
-            a.download = `pi2_report_${Date.now()}.csv`; document.body.appendChild(a); a.click(); a.remove();
-        }
+def create_charts(df, eth_info):
+    if df.empty: return None
+    s_df = df[df["status"]=="SUCCESS"]
+    if s_df.empty: return None
+    
+    if not os.path.exists("logs"): os.makedirs("logs")
+    ts = int(time.time())
+    
+    # 1. График стабильности
+    plt.figure(figsize=(10, 5))
+    plt.style.use('dark_background')
+    plt.plot(s_df["id"], s_df["latency"], color='#00FFFF', marker='o', linestyle='-', linewidth=1, label='FastSet Latency')
+    avg_lat = s_df["latency"].mean()
+    plt.axhline(y=avg_lat, color='yellow', linestyle='--', label=f'Avg: {avg_lat:.3f}s')
+    plt.title('Pi Squared: Network Stability Test')
+    plt.ylabel('Seconds')
+    plt.legend()
+    plt.grid(color='#333333')
+    path1 = f"logs/stability_{ts}.png"
+    plt.savefig(path1)
+    plt.close()
+    
+    # 2. График сравнения (Bar Chart)
+    networks = ['Pi Squared', 'Solana', 'Ethereum L1']
+    vals = [avg_lat, 0.6, 12.05]
+    colors = ['#00FFFF', '#A020F0', '#627EEA']
+    
+    plt.figure(figsize=(8, 6))
+    plt.style.use('dark_background')
+    bars = plt.bar(networks, vals, color=colors)
+    plt.title('Transaction Speed Comparison')
+    plt.ylabel('Time (Seconds)')
+    
+    # Подписи
+    for bar in bars:
+        h = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2, h, f'{h:.2f}s', ha='center', va='bottom', color='white', fontweight='bold')
+        
+    path2 = f"logs/versus_{ts}.png"
+    plt.savefig(path2)
+    plt.close()
+    
+    return path1, path2
 
-        function initChart() {
-            const ctx = document.getElementById('mainChart').getContext('2d');
-            const g = ctx.createLinearGradient(0,0,0,300); g.addColorStop(0,'rgba(0,242,234,0.2)'); g.addColorStop(1,'rgba(0,0,0,0)');
-            chart = new Chart(ctx, {type:'line', data:{labels:[], datasets:[{data:[], borderColor:'#00f2ea', backgroundColor:g, fill:true, tension:0.4, borderWidth:2, pointRadius:2}]}, 
-            options:{responsive:true, maintainAspectRatio:false, plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'rgba(255,255,255,0.05)'}, ticks:{color:'#545975'}}}}});
-        }
-        function initParticles(){const c=document.getElementById('particles'),x=c.getContext('2d');c.width=window.innerWidth;c.height=window.innerHeight;let p=Array(50).fill().map(()=>({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,s:Math.random()*2}));function a(){x.clearRect(0,0,c.width,c.height);x.fillStyle="#00f2ea";p.forEach(e=>{e.x+=e.vx;e.y+=e.vy;if(e.x<0)e.x=c.width;if(e.x>c.width)e.x=0;if(e.y<0)e.y=c.height;if(e.y>c.height)e.y=0;x.beginPath();x.arc(e.x,e.y,e.s,0,Math.PI*2);x.fill()});requestAnimationFrame(a)}a()}
-    </script>
-</body>
-</html>
+# --- 🕹️ РЕЖИМЫ ---
+
+def mode_benchmark(wallet):
+    eth_info = get_eth_data()
+    print(f"   Eth Status: {eth_info['gwei']:.1f} Gwei (~${eth_info['cost_usd']:.2f}/tx)")
+    
+    print(f"\n{Fore.YELLOW}🚀 Starting FastSet Audit (20 TXs)...")
+    history = []
+    
+    with tqdm(total=20, bar_format="{l_bar}{bar:30}{r_bar}", colour="cyan") as pbar:
+        for i in range(1, 21):
+            res = send_tx(wallet)
+            
+            icon = "✅" if res["success"] else "❌"
+            pbar.set_postfix_str(f"{icon} {res['latency']:.3f}s | {res['amount']} wei")
+            
+            history.append({
+                "id": i, "latency": res["latency"], 
+                "status": "SUCCESS" if res["success"] else "FAIL"
+            })
+            pbar.update(1)
+            time.sleep(random.uniform(0.3, 0.6))
+            
+    # Отчет
+    df = pd.DataFrame(history)
+    success_df = df[df["status"]=="SUCCESS"]
+    
+    if not success_df.empty:
+        my_avg = success_df["latency"].mean()
+        
+        # Таблица
+        data = [
+            [f"{Fore.GREEN}Pi Squared", f"{my_avg:.4f} s", f"{Fore.GREEN}$ 0.00"],
+            [f"Ethereum L1", "12.0500 s", f"{Fore.RED}$ {eth_info['cost_usd']:.2f}"]
+        ]
+        
+        print("\n" + Fore.MAGENTA + "🏆 FINAL BENCHMARK REPORT")
+        print(tabulate(data, headers=["Network", "Speed", "Cost"], tablefmt="fancy_grid"))
+        
+        # Графики
+        p1, p2 = create_charts(df, eth_info)
+        print(f"\n{Fore.CYAN}💾 Отчет сохранен:")
+        if p1: print(f"   1. {p1} (График пинга)")
+        if p2: print(f"   2. {p2} (Сравнение с ETH)")
+        
+        print(f"\n{Fore.YELLOW}📣 COPY FOR TWITTER:")
+        print(f"{Fore.WHITE}Just audited #PiSquared FastSet latency 🏎️💨")
+        print(f"⚡ Speed: {my_avg:.3f}s")
+        print(f"💸 Gas Saved: ${eth_info['cost_usd']*20:.2f} (vs ETH)")
+        print("#ZK #ProofOfProof")
+        
+    else:
+        print(Fore.RED + "❌ Ошибка. Нет успешных транзакций. Проверьте баланс на 'set1...' кошельке.")
+
+def mode_wiki():
+    print(Fore.CYAN + "\n🎓 PI SQUARED ACADEMY")
+    table = [[k, v] for k, v in WIKI.items()]
+    print(tabulate(table, headers=["Term", "Definition"], tablefmt="grid", maxcolwidths=[15, 60]))
+    input("\nEnter...")
+
+def mode_sentinel(wallet):
+    print(f"\n{Fore.MAGENTA}🛡️ Sentinel Monitor (Live Heartbeat)")
+    print("Нажмите Ctrl+C для выхода.")
+    try:
+        count = 1
+        while True:
+            res = send_tx(wallet)
+            ts = datetime.now().strftime("%H:%M:%S")
+            if res["success"]:
+                print(f"[{ts}] #{count} | {Fore.GREEN}{res['latency']:.3f}s{Fore.WHITE} | {Fore.CYAN}{res['amount']} wei{Fore.WHITE} | ✅ OK")
+            else:
+                print(f"[{ts}] #{count} | {Fore.RED}ERROR {res['code']}")
+            count += 1
+            time.sleep(random.uniform(5, 10))
+    except KeyboardInterrupt:
+        print("Stopped.")
+
+# --- MAIN ---
+
+def main():
+    print(Fore.CYAN + Style.BRIGHT + """
+   ⚡ PI SQUARED SENTINEL v6.1 
+      Analytics & Stress-Test Tool
+    """)
+    
+    wallet = load_or_setup_wallet()
+    print(f"🔑 Using Wallet: {Fore.GREEN}{wallet['address']}")
+    
+    while True:
+        print(f"\n{Fore.WHITE} [1] 🏎  Run Benchmark (Test + Analytics)")
+        print(f" [2] 🛡️  Live Monitor (Sentinel)")
+        print(f" [3] 🎓 Academy (Wiki)")
+        print(f" [4] ❌ Reset Wallet")
+        print(f" [0] Exit")
+        
+        c = input("\n> ")
+        
+        if c == "1": mode_benchmark(wallet)
+        elif c == "2": mode_sentinel(wallet)
+        elif c == "3": mode_wiki()
+        elif c == "4": 
+            if os.path.exists(CONFIG_FILE): os.remove(CONFIG_FILE)
+            print("Config deleted."); break
+        elif c == "0": break
+
+if __name__ == "__main__":
+    main()
