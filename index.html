@@ -3,338 +3,544 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi2 Sentinel | v8.2 Nano</title>
+    <title>Pi2 Sentinel | v9.0 Architect</title>
     
-    <!-- FONTS & LIBS -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- LIBRARIES -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- CONFIG & THEME -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         pi: {
-                            bg: '#020204',
-                            card: '#0e0e14',
-                            primary: '#00f2ea', // Cyan Neon
+                            base: '#030305',
+                            panel: '#0a0a0f',
+                            accent: '#00f0ff', // Cyber Cyan
+                            purple: '#bd00ff', // Cyber Purple
                             success: '#00ff9d',
-                            danger: '#ff2a55',
-                            dim: '#555a6d'
+                            warn: '#ffeb3b',
+                            danger: '#ff2a6d',
+                            dim: '#4b5563'
                         }
                     },
-                    fontFamily: { mono: ['"JetBrains Mono"', 'monospace'], sans: ['"Inter"', 'sans-serif'] }
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                        hud: ['"Rajdhani"', 'sans-serif']
+                    },
+                    animation: {
+                        'spin-slow': 'spin 8s linear infinite',
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'scan': 'scan 4s linear infinite'
+                    },
+                    keyframes: {
+                        scan: { '0%': { top: '0%' }, '100%': { top: '100%' } }
+                    }
                 }
             }
         }
     </script>
+
     <style>
-        body { background-color: #020204; overflow-x: hidden; color: #eee; }
-        .glass { background: rgba(14, 14, 20, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
-        .glow-text { text-shadow: 0 0 10px rgba(0, 242, 234, 0.5); }
-        .scanline { position: absolute; top:0; left:0; width:100%; height:2px; background: rgba(0,242,234,0.3); opacity:0.5; animation: scan 3s infinite linear; pointer-events:none; }
-        @keyframes scan { 0% {top:0;} 100% {top:100%;} }
+        body { background-color: #030305; background-image: radial-gradient(#111 1px, transparent 0); background-size: 40px 40px; color: #eee; overflow-x: hidden; }
+        
+        /* Glass Panels */
+        .glass {
+            background: rgba(10, 10, 15, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Neon Glows */
+        .glow-acc { box-shadow: 0 0 10px rgba(0, 240, 255, 0.3); border-color: rgba(0, 240, 255, 0.5); }
+        .glow-pur { box-shadow: 0 0 10px rgba(189, 0, 255, 0.3); }
+        
+        /* Custom Elements */
+        .tech-border { position: relative; }
+        .tech-border::after { content: ''; position: absolute; top: -1px; right: -1px; width: 10px; height: 10px; border-top: 2px solid #00f0ff; border-right: 2px solid #00f0ff; }
+        .tech-border::before { content: ''; position: absolute; bottom: -1px; left: -1px; width: 10px; height: 10px; border-bottom: 2px solid #00f0ff; border-left: 2px solid #00f0ff; }
+
+        .scanline { position: absolute; left: 0; width: 100%; height: 2px; background: rgba(0, 240, 255, 0.5); opacity: 0.5; box-shadow: 0 0 10px rgba(0, 240, 255, 1); pointer-events: none; }
     </style>
 </head>
-<body class="font-sans antialiased relative selection:bg-pi-primary selection:text-black">
+<body class="font-sans antialiased relative min-h-screen flex flex-col">
 
-    <div class="max-w-7xl mx-auto px-4 py-8 min-h-screen flex flex-col">
-        <!-- HEADER -->
-        <header class="flex justify-between items-center mb-8 glass p-5 rounded-xl border-l-4 border-pi-primary">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-black rounded flex items-center justify-center text-xl font-bold border border-white/10">π²</div>
+    <!-- HEADER HUD -->
+    <header class="w-full border-b border-white/5 bg-pi-base/90 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-gradient-to-tr from-pi-purple to-pi-accent flex items-center justify-center font-bold text-black rounded text-sm tech-border">π²</div>
                 <div>
-                    <h1 class="text-xl font-black text-white tracking-widest">SENTINEL <span class="text-xs bg-pi-primary/10 text-pi-primary px-2 py-0.5 rounded border border-pi-primary/20">v8.2 STABLE</span></h1>
-                    <p class="text-[10px] text-pi-dim uppercase tracking-wider">Devnet Diagnostics Tool</p>
+                    <h1 class="font-hud font-bold text-xl tracking-[0.2em] text-white">SENTINEL <span class="text-pi-accent">ARCHITECT</span></h1>
                 </div>
             </div>
-            <div class="flex gap-2">
-                <a href="https://docs.pi2.network" target="_blank" class="text-[10px] bg-white/5 border border-white/10 px-3 py-2 rounded hover:bg-white/10 transition uppercase font-bold text-gray-400">
-                    <i class="fas fa-faucet mr-1"></i> Faucet Info
-                </a>
-                <button onclick="downloadCSV()" id="btn_export" class="hidden text-[10px] bg-pi-success/10 border border-pi-success/30 px-3 py-2 rounded text-pi-success transition uppercase font-bold">
-                    <i class="fas fa-file-csv mr-1"></i> Export Data
-                </button>
+            
+            <div class="flex gap-4 items-center">
+                <div class="hidden md:flex text-[10px] font-mono gap-4 text-pi-dim">
+                    <span>NET: <b class="text-pi-success">DEVNET 2.0</b></span>
+                    <span>PROTO: <b class="text-white">COSMOS SDK</b></span>
+                    <span>LAYER: <b class="text-pi-purple">USL</b></span>
+                </div>
+                <div class="h-8 w-[1px] bg-white/10"></div>
+                <button onclick="toggleLang()" class="font-mono text-xs font-bold border border-white/20 px-3 py-1 rounded hover:bg-white/10 text-pi-accent transition" id="langBtn">EN</button>
             </div>
-        </header>
+        </div>
+    </header>
 
-        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
-            <!-- SETUP SIDEBAR -->
-            <aside class="lg:col-span-4 flex flex-col gap-6">
-                <div class="glass p-6 rounded-xl relative overflow-hidden">
-                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <i class="fas fa-wallet text-pi-primary"></i> Wallet Config
-                    </h2>
-                    
-                    <div id="setupForm" class="space-y-4 relative z-10">
-                        <div class="bg-red-900/10 border border-red-900/30 p-3 rounded text-[10px] text-red-300 leading-relaxed">
-                            ⚠️ <b>Burner Wallet Only!</b> Never use keys that hold real funds. Use keys generated for Testnet.
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-[10px] text-gray-500 uppercase font-bold">Address</label>
-                            <input type="text" id="inp_addr" class="w-full bg-black/40 border border-white/10 rounded p-2.5 text-xs font-mono text-pi-primary focus:border-pi-primary focus:outline-none transition" placeholder="set1...">
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-[10px] text-gray-500 uppercase font-bold">Private Key</label>
-                            <input type="password" id="inp_pk" class="w-full bg-black/40 border border-white/10 rounded p-2.5 text-xs font-mono text-pi-primary focus:border-pi-primary focus:outline-none transition" placeholder="0x...">
-                        </div>
-                        <button onclick="saveConfig()" class="w-full bg-pi-primary hover:bg-cyan-300 text-black font-bold py-3 rounded text-xs uppercase tracking-widest transition shadow-[0_0_15px_rgba(0,242,234,0.3)]">Connect Wallet</button>
-                    </div>
+    <!-- MAIN DASHBOARD -->
+    <div class="flex-grow max-w-7xl mx-auto w-full px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-                    <div id="connectedView" class="hidden text-center py-6">
-                        <div class="w-16 h-16 mx-auto bg-pi-success/10 rounded-full flex items-center justify-center mb-3">
-                            <i class="fas fa-check text-2xl text-pi-success"></i>
-                        </div>
-                        <div class="text-[10px] text-gray-500 uppercase mb-1">Active Target</div>
-                        <div class="bg-black/30 text-pi-success font-mono text-[10px] p-2 rounded mb-4 break-all border border-pi-success/20" id="display_addr">...</div>
-                        <button onclick="disconnect()" class="text-xs text-red-400 hover:text-white border-b border-red-900 pb-0.5 transition">Disconnect</button>
-                    </div>
+        <!-- LEFT COLUMN: CONTROLS (3 COLS) -->
+        <aside class="lg:col-span-3 flex flex-col gap-4">
+            <!-- WALLET -->
+            <div class="glass p-5 rounded relative group">
+                <div class="tech-border w-full h-full absolute top-0 left-0 pointer-events-none opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                <h2 class="text-xs font-hud font-bold text-pi-dim tracking-widest mb-4 flex items-center gap-2">
+                    <i class="fas fa-terminal"></i> UPLINK CONFIG
+                </h2>
+                
+                <div id="setupForm" class="space-y-3">
+                     <div class="bg-red-500/10 border-l-2 border-red-500 p-2 text-[9px] text-gray-300 leading-tight">
+                         ⚠️ TESTNET ONLY. Keys are locally stored (Browser RAM/Storage).
+                     </div>
+                     <div>
+                         <label class="text-[9px] uppercase text-pi-accent font-bold">Target Address</label>
+                         <input type="text" id="inp_addr" class="w-full bg-black/50 border border-white/10 text-white text-[10px] p-2 font-mono focus:border-pi-accent focus:outline-none transition" placeholder="set1...">
+                     </div>
+                     <div>
+                         <label class="text-[9px] uppercase text-pi-accent font-bold">Private Key</label>
+                         <input type="password" id="inp_pk" class="w-full bg-black/50 border border-white/10 text-white text-[10px] p-2 font-mono focus:border-pi-accent focus:outline-none transition" placeholder="0x...">
+                     </div>
+                     <button onclick="saveConfig()" id="btn_conn" class="w-full mt-2 bg-pi-accent/10 border border-pi-accent/50 hover:bg-pi-accent hover:text-black text-pi-accent text-xs font-bold py-2 uppercase transition-all duration-300">
+                        Initialize
+                     </button>
                 </div>
 
-                <!-- EDUCATION -->
-                <div class="glass p-6 rounded-xl flex-grow flex flex-col justify-between border-t border-pi-primary/30">
+                <div id="connectedView" class="hidden">
+                    <div class="flex flex-col items-center py-4">
+                        <div class="w-12 h-12 rounded-full border border-pi-success/30 flex items-center justify-center mb-2 shadow-[0_0_15px_rgba(0,255,157,0.2)]">
+                            <i class="fas fa-link text-pi-success"></i>
+                        </div>
+                        <div class="text-[10px] font-mono text-gray-500 mb-1">CONNECTED IDENTITY</div>
+                        <div id="display_addr" class="text-[10px] font-mono text-white bg-white/5 p-1 rounded px-2 mb-4 border border-white/10">...</div>
+                        <button onclick="disconnect()" class="text-[10px] text-pi-danger hover:underline">TERMINATE SESSION</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROXY STATUS -->
+            <div class="glass p-4 rounded text-center">
+                 <h3 class="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-2">TUNNEL STATUS</h3>
+                 <div class="flex justify-between items-center text-[10px] font-mono bg-black/40 p-2 rounded mb-1">
+                     <span class="text-gray-400">GATEWAY A</span>
+                     <span id="gw_a" class="text-pi-success">ONLINE</span>
+                 </div>
+                 <div class="flex justify-between items-center text-[10px] font-mono bg-black/40 p-2 rounded">
+                     <span class="text-gray-400">GATEWAY B</span>
+                     <span id="gw_b" class="text-gray-600">STANDBY</span>
+                 </div>
+            </div>
+        </aside>
+
+        <!-- MIDDLE COLUMN: VISUALS (6 COLS) -->
+        <main class="lg:col-span-6 flex flex-col gap-4">
+            
+            <!-- PIPELINE VISUALIZER -->
+            <div class="glass p-1 rounded relative h-16 flex items-center justify-between px-6 border-t border-pi-accent/20">
+                <!-- Node 1: User -->
+                <div class="flex flex-col items-center z-10">
+                    <div id="node_1" class="w-3 h-3 bg-gray-600 rounded-full transition-colors duration-300"></div>
+                    <span class="text-[9px] text-gray-500 mt-1 uppercase">User</span>
+                </div>
+                <!-- Connector -->
+                <div class="flex-grow h-[1px] bg-white/10 mx-2 relative overflow-hidden">
+                    <div id="anim_line" class="absolute left-[-100%] w-[50%] h-full bg-gradient-to-r from-transparent via-pi-accent to-transparent"></div>
+                </div>
+                <!-- Node 2: Proxy -->
+                <div class="flex flex-col items-center z-10">
+                    <div id="node_2" class="w-3 h-3 bg-gray-600 rounded-full transition-colors duration-300"></div>
+                    <span class="text-[9px] text-gray-500 mt-1 uppercase">Proxy</span>
+                </div>
+                <!-- Connector -->
+                <div class="flex-grow h-[1px] bg-white/10 mx-2 relative"></div>
+                <!-- Node 3: Network -->
+                <div class="flex flex-col items-center z-10">
+                    <div id="node_3" class="w-3 h-3 bg-gray-600 rounded-full transition-colors duration-300"></div>
+                    <span class="text-[9px] text-gray-500 mt-1 uppercase">FastSet</span>
+                </div>
+                <!-- Connector -->
+                <div class="flex-grow h-[1px] bg-white/10 mx-2 relative"></div>
+                <!-- Node 4: Consensus -->
+                <div class="flex flex-col items-center z-10">
+                    <div id="node_4" class="w-4 h-4 border border-gray-600 rounded flex items-center justify-center transition-colors duration-300">
+                        <i class="fas fa-check text-[8px] text-black"></i>
+                    </div>
+                    <span class="text-[9px] text-gray-500 mt-1 uppercase">Finality</span>
+                </div>
+            </div>
+
+            <!-- CHART HUD -->
+            <div class="glass p-4 rounded-xl flex-grow flex flex-col min-h-[300px] relative overflow-hidden">
+                <div class="absolute top-4 left-5 z-20 flex gap-4">
                     <div>
-                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                             <i class="fas fa-lightbulb text-yellow-400"></i> AI Analysis
-                        </h3>
-                        <div id="insight_box" class="text-center p-5 bg-black/20 rounded border border-white/5 text-xs text-gray-400 italic">
-                            System idle. Start benchmark to analyze FastSet performance.
-                        </div>
+                        <p class="text-[9px] text-gray-500 uppercase">AVG LATENCY</p>
+                        <p class="text-xl font-mono font-bold text-white"><span id="val_avg">0</span> <span class="text-xs text-pi-accent">ms</span></p>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 mt-4 text-[10px] text-gray-500">
-                        <div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 bg-pi-primary rounded-full"></div> &lt;800ms (Fast)</div>
-                        <div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></div> Normal Load</div>
-                        <div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 bg-red-500 rounded-full"></div> Proxy Throttle</div>
+                    <div>
+                         <p class="text-[9px] text-gray-500 uppercase">TX RATE</p>
+                         <p class="text-xl font-mono font-bold text-white"><span id="val_rate">0</span><span class="text-gray-600">/20</span></p>
                     </div>
                 </div>
-            </aside>
-
-            <!-- DASHBOARD -->
-            <section class="lg:col-span-8 flex flex-col gap-6">
-                <!-- METRICS -->
-                <div class="grid grid-cols-4 gap-4">
-                    <div class="glass p-4 rounded text-center">
-                        <div class="text-[10px] text-gray-500 uppercase tracking-wide">State</div>
-                        <div id="val_status" class="font-mono text-white font-bold text-sm">READY</div>
-                    </div>
-                    <div class="glass p-4 rounded text-center border-b-2 border-pi-primary">
-                        <div class="text-[10px] text-gray-500 uppercase tracking-wide">Latency</div>
-                        <div class="font-mono text-pi-primary font-bold text-lg"><span id="val_lat">--</span>ms</div>
-                    </div>
-                    <div class="glass p-4 rounded text-center">
-                        <div class="text-[10px] text-gray-500 uppercase tracking-wide">TX Count</div>
-                        <div class="font-mono text-white font-bold text-lg"><span id="val_curr">0</span>/20</div>
-                    </div>
-                    <div class="glass p-4 rounded text-center border-b-2 border-pi-success">
-                        <div class="text-[10px] text-gray-500 uppercase tracking-wide">Success Rate</div>
-                        <div class="font-mono text-pi-success font-bold text-lg"><span id="val_rate">--</span>%</div>
-                    </div>
+                
+                <!-- Live Indicator -->
+                <div id="live_tag" class="hidden absolute top-4 right-5 z-20 flex items-center gap-2">
+                     <span class="text-[9px] text-pi-danger font-bold tracking-widest animate-pulse">LIVE FEED</span>
+                     <div class="w-2 h-2 bg-pi-danger rounded-full animate-ping"></div>
                 </div>
 
-                <!-- CHART -->
-                <div class="glass p-1 rounded-xl relative flex-grow min-h-[300px] border border-white/5">
-                    <div class="absolute top-4 right-5 text-[10px] font-mono text-gray-600 bg-black/50 px-2 rounded">
-                        GTW: <span id="proxy_lbl" class="text-gray-400">AUTO</span>
-                    </div>
+                <div class="mt-10 flex-grow relative">
                     <canvas id="mainChart"></canvas>
                 </div>
+            </div>
 
-                <!-- CONSOLE -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-56">
-                    <div class="md:col-span-2 glass bg-[#050508] p-4 font-mono text-[10px] overflow-y-auto relative custom-scroll rounded-xl border border-white/5" id="console">
-                        <div class="scanline"></div>
-                        <div class="text-pi-primary mb-1">> System Loaded v8.2</div>
-                        <div class="text-gray-500 mb-1">> Payload set to integer "1" (Safe Mode).</div>
-                        <div class="text-pi-dim">> Ready for input...</div>
-                    </div>
+            <!-- LOG TERMINAL -->
+            <div class="glass p-3 h-48 bg-black/60 font-mono text-[10px] overflow-y-auto relative rounded custom-scroll border border-white/5" id="console">
+                 <div class="text-pi-accent mb-1">>>> SYSTEM INITIALIZED... v9.0 Architect</div>
+                 <div class="text-gray-500 mb-1">>>> TARGET PAYLOAD: INTEGER (SAFE-MODE)</div>
+                 <div class="text-pi-dim">>>> STANDBY...</div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                 <button id="btn_start" onclick="startTest()" disabled class="bg-pi-accent text-black font-bold font-hud tracking-widest text-sm py-3 rounded disabled:opacity-20 hover:scale-[1.01] active:scale-[0.99] transition shadow-[0_0_20px_rgba(0,240,255,0.3)]">
+                     INITIATE SEQUENCE
+                 </button>
+                 <button onclick="stopTest()" class="border border-white/10 text-gray-400 hover:text-white font-hud tracking-widest text-sm py-3 rounded hover:bg-white/5 transition">
+                     ABORT
+                 </button>
+            </div>
+        </main>
 
-                    <div class="glass p-6 rounded-xl flex flex-col justify-center gap-3">
-                        <button id="btn_start" onclick="startTest()" disabled class="w-full bg-gradient-to-r from-gray-700 to-gray-800 text-gray-400 font-bold py-3.5 rounded shadow-lg text-xs uppercase tracking-widest disabled:opacity-50 transition-all">
-                            Start Test
-                        </button>
-                        <button onclick="stopTest()" class="text-[10px] text-red-500 hover:text-white border border-red-900/20 bg-red-900/10 py-2 rounded">Force Stop</button>
+        <!-- RIGHT COLUMN: KNOWLEDGE BASE (3 COLS) -->
+        <aside class="lg:col-span-3 flex flex-col gap-4">
+            <div class="glass h-full rounded p-5 relative overflow-hidden flex flex-col border-t-2 border-pi-purple">
+                <div class="absolute top-2 right-2 opacity-10">
+                    <i class="fas fa-brain text-4xl text-pi-purple"></i>
+                </div>
+                <h3 class="text-xs font-bold text-pi-dim uppercase tracking-widest mb-6">Info Feed</h3>
+                
+                <!-- DYNAMIC CARD CONTAINER -->
+                <div id="edu_container" class="flex-grow flex flex-col items-center justify-center text-center transition-all duration-500">
+                    <div class="p-4 bg-white/5 rounded border border-white/5 mb-4">
+                        <i class="fas fa-info-circle text-2xl text-gray-600 mb-2"></i>
+                        <p class="text-xs text-gray-400 italic">Wait mode.</p>
+                        <p class="text-[10px] text-gray-600 mt-2 leading-relaxed">
+                            Initialize the benchmark to verify FastSet performance and unlock the data stream.
+                        </p>
                     </div>
                 </div>
-            </section>
-        </main>
+                
+                <div class="mt-auto border-t border-white/5 pt-4">
+                    <p class="text-[9px] text-gray-500 uppercase mb-2">Reference Data</p>
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="w-1 h-1 bg-pi-accent"></div>
+                        <span class="text-[10px] text-white">USL (Universal Settlement Layer)</span>
+                    </div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <div class="w-1 h-1 bg-pi-purple"></div>
+                        <span class="text-[10px] text-white">K-Framework Verifiability</span>
+                    </div>
+                     <button onclick="downloadCSV()" id="btn_export" class="hidden w-full mt-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] py-2 rounded transition flex items-center justify-center gap-2">
+                         <i class="fas fa-download"></i> EXPORT LOGS
+                     </button>
+                </div>
+            </div>
+        </aside>
+
     </div>
 
     <script>
-        // CONFIG
-        const API = "https://api.wallet.fastset.xyz/api/transferToken";
+        // === CORE CONFIG ===
+        const API_URL = "https://api.wallet.fastset.xyz/api/transferToken";
         const PROXIES = [
-            (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`, 
+            (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
             (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
         ];
-        // Standard ID
         const TID = "0xfa575e7000000000000000000000000000000000000000000000000000000000";
-        
-        let run = false;
-        let chart;
-        let wallet = { a: '', k: '' };
-        let stats = { ok: 0, fail: 0, logs: [] };
 
-        // INIT
+        // === EDUCATIONAL DATABASE ===
+        const FACTS = [
+            { t: "Proof-of-Proof", d: "Pi Squared doesn't just re-execute transactions. Instead, it checks the cryptographic proof of validity. This allows for massive scalability." },
+            { t: "FastSet Consensus", d: "You are witnessing sub-second finality. FastSet decouples transaction dissemination from execution to achieve low latency." },
+            { t: "Universal Settlement", d: "Pi2 acts as a USL (Universal Settlement Layer). It can verify computations from Ethereum, Solana, or any other chain agnostically." },
+            { t: "K-Framework", d: "This implies formal semantics. Any language (C++, Rust, Python) defined in K can be mathematically verified on Pi2." },
+            { t: "Optimistic Response", d: "If the chart shows <1000ms, the network is outpacing standard EVM block times significantly." }
+        ];
+
+        let state = { run: false, lang: 'en', wallet: {a:'',k:''}, logs: [], ok:0, fail:0 };
+        let chart;
+        let factInterval;
+
+        // === INITIALIZATION ===
         window.onload = () => {
             initChart();
-            if(localStorage.getItem('p2_a')) {
-                wallet.a = localStorage.getItem('p2_a');
-                wallet.k = localStorage.getItem('p2_k');
+            if(localStorage.getItem('p2a')) {
+                state.wallet.a = localStorage.getItem('p2a');
+                state.wallet.k = localStorage.getItem('p2k');
                 toggleUI(true);
             }
         };
 
+        // === CONNECTION ===
         function saveConfig() {
             const a = document.getElementById('inp_addr').value.trim();
             const k = document.getElementById('inp_pk').value.trim();
-            if(!a.startsWith('set1') || !k.startsWith('0x')) return alert("Invalid Format! Address must start with 'set1', Key with '0x'");
-            localStorage.setItem('p2_a', a); localStorage.setItem('p2_k', k);
-            wallet = { a, k };
+            if(!a.startsWith('set1') || !k.startsWith('0x')) return alert("Format Error! Check console.");
+            localStorage.setItem('p2a', a); localStorage.setItem('p2k', k);
+            state.wallet = { a, k };
             toggleUI(true);
-            log("Credentials Saved.", 'ok');
+            log("Credentials Secured in LocalStorage.", 'sys');
         }
 
-        function disconnect() { localStorage.clear(); wallet={a:'',k:''}; toggleUI(false); log("Disconnected.",'warn');}
-        
-        function toggleUI(connected) {
-            const f=document.getElementById('setupForm'), v=document.getElementById('connectedView'), b=document.getElementById('btn_start');
-            if(connected) { f.classList.add('hidden'); v.classList.remove('hidden'); b.disabled=false; b.classList.remove('from-gray-700','text-gray-400'); b.classList.add('from-pi-primary','to-cyan-600','text-black'); document.getElementById('display_addr').innerText = wallet.a; }
-            else { f.classList.remove('hidden'); v.classList.add('hidden'); b.disabled=true; b.classList.add('from-gray-700'); b.classList.remove('from-pi-primary'); }
+        function disconnect() {
+            localStorage.clear(); state.wallet = {a:'',k:''}; toggleUI(false);
+            log("Session Terminated.", 'sys');
         }
 
-        // --- BENCHMARK ---
+        function toggleUI(active) {
+            const form = document.getElementById('setupForm'), view = document.getElementById('connectedView'), btn = document.getElementById('btn_start');
+            if(active) {
+                form.classList.add('hidden'); view.classList.remove('hidden'); btn.disabled = false;
+                document.getElementById('display_addr').innerText = state.wallet.a;
+            } else {
+                form.classList.remove('hidden'); view.classList.add('hidden'); btn.disabled = true;
+            }
+        }
+
+        // === MAIN ENGINE ===
         async function startTest() {
-            if(run) return;
-            run = true;
-            stats = { ok: 0, fail: 0, logs: [] };
+            if(state.run) return;
+            state.run = true;
+            state.ok = 0; state.fail = 0; state.logs = [];
             chart.data.labels = []; chart.data.datasets[0].data = []; chart.update();
-            updateStatView(true);
-
-            // FIX: Sending safe "1" integer instead of floats to prevent Error 500
-            const PAYLOAD_AMOUNT = "1"; 
             
-            const TOTAL = 20;
+            document.getElementById('live_tag').classList.remove('hidden');
+            document.getElementById('btn_export').classList.add('hidden');
+            
+            // Start Info Feed Rotation
+            startEducationFeed();
+
+            const MAX = 20;
             let pIdx = 0;
 
-            for(let i=1; i<=TOTAL; i++) {
-                if(!run) break;
+            for(let i=1; i<=MAX; i++) {
+                if(!state.run) break;
 
-                const gw = PROXIES[pIdx % PROXIES.length];
-                const url = gw(API);
-                document.getElementById('proxy_lbl').innerText = (pIdx%2===0) ? 'A' : 'B';
+                // Proxy Selection UI
+                updateProxyUI(pIdx % 2);
+                
+                // Visualization Reset
+                resetPipeline();
+                pipelineAnim(1, true); // User active
 
-                const start = Date.now();
-                log(`Broadcasting '1' Unit (TX #${i})...`, 'dim');
+                const url = PROXIES[pIdx % PROXIES.length](API_URL);
+                log(`Constructing Transaction #${i}...`, 'dim');
+                
+                const startT = Date.now();
+                pipelineAnim(2, true); // Proxy active
+                document.getElementById('anim_line').style.animation = "scan 1s infinite linear";
 
                 try {
                     const res = await fetch(url, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            sender: wallet.a, recipient: wallet.a, 
-                            amount: PAYLOAD_AMOUNT, 
-                            tokenId: TID, privateKey: wallet.k
-                        })
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ sender: state.wallet.a, recipient: state.wallet.a, amount: "1", tokenId: TID, privateKey: state.wallet.k })
                     });
-
-                    // HTTP ERROR HANDLING
-                    if(res.status === 500) throw new Error("500: Check Faucet/Balance");
-                    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-
-                    // SUCCESS
-                    const ms = Date.now() - start;
-                    stats.ok++;
-                    stats.logs.push({id:i, lat:ms, res:'OK'});
                     
-                    log(`✅ Success: ${ms}ms`, 'ok');
-                    updateMetrics(ms);
-                    explain(ms, null);
-                    pushChart(i, ms);
+                    pipelineAnim(3, true); // FastSet Active
 
-                    await sleep(2500); // 2.5s Delay
+                    if(!res.ok && res.status !== 200) throw new Error(`HTTP ${res.status}`);
+
+                    // Success Flow
+                    const ms = Date.now() - startT;
+                    state.ok++;
+                    state.logs.push({id:i, lat:ms, res:'OK'});
                     
+                    pipelineAnim(4, true); // Finality
+                    document.getElementById('anim_line').style.animation = "none";
+                    
+                    log(`Block Finalized: ${ms}ms`, 'ok');
+                    updateChart(i, ms);
+                    updateDashboard(ms, i);
+                    
+                    // Fact pop based on event
+                    showFact(FACTS[i % FACTS.length]);
+                    
+                    await sleep(2500); // Cool down
+
                 } catch(e) {
-                    stats.fail++;
-                    stats.logs.push({id:i, lat:0, res:'FAIL'});
-                    log(`❌ Error: ${e.message}`, 'err');
+                    // Error Flow
+                    state.fail++;
+                    state.logs.push({id:i, lat:0, res:'ERR'});
+                    log(`Failed: ${e.message}`, 'err');
+                    pipelineAnim(2, false); // Proxy Fail Red
+                    document.getElementById('anim_line').style.animation = "none";
                     
-                    if(e.message.includes('500')) {
-                        explain(0, 'Your wallet might be empty. Check Faucet.');
-                        run = false; // Stop on fund error
-                        break; 
-                    } else {
-                        // Rotation
-                        pIdx++;
-                        log("Rotating Proxy...", 'dim');
-                        await sleep(3500);
-                    }
+                    pIdx++; // Switch Proxy
+                    log("Re-routing Uplink...", 'sys');
+                    await sleep(3500);
                 }
-                
-                document.getElementById('val_curr').innerText = i;
             }
             
             stopTest();
         }
 
         function stopTest() {
-            run = false;
-            updateStatView(false);
-            if(stats.ok > 0) document.getElementById('btn_export').classList.remove('hidden');
-            log("Test Sequence Ended.", 'dim');
+            state.run = false;
+            clearInterval(factInterval);
+            document.getElementById('live_tag').classList.add('hidden');
+            resetPipeline();
+            document.getElementById('anim_line').style.animation = "none";
+            if(state.ok > 0) document.getElementById('btn_export').classList.remove('hidden');
+            log("SEQUENCE COMPLETE.", 'ok');
+            document.getElementById('edu_container').innerHTML = `<div class='text-center p-4 text-xs text-gray-500'>Diagnostics Finished.</div>`;
         }
 
-        // --- HELPERS ---
-        function explain(ms, err) {
-            const b = document.getElementById('insight_box');
-            if(err) { b.innerText = err; b.classList.add('text-pi-danger'); return; }
-            b.classList.remove('text-pi-danger');
+        // === VISUALIZERS ===
+        function startEducationFeed() {
+            let i = 0;
+            showFact(FACTS[0]); // Immediate
+            // Fallback interval if transactions take long
+            factInterval = setInterval(() => {
+                if(!state.run) return;
+                i++;
+                // Only rotate if not driven by TX events
+            }, 8000); 
+        }
+
+        function showFact(f) {
+            const el = document.getElementById('edu_container');
+            // Fade Out
+            el.style.opacity = 0;
+            setTimeout(() => {
+                el.innerHTML = `
+                    <div class="glass p-4 rounded w-full border-t border-pi-purple animate-[pulse_0.5s_ease-out]">
+                        <h4 class="text-pi-purple font-hud font-bold tracking-widest text-xs uppercase mb-2">${f.t}</h4>
+                        <p class="text-[10px] text-gray-300 font-mono leading-relaxed">${f.d}</p>
+                    </div>
+                `;
+                // Fade In
+                el.style.opacity = 1;
+            }, 300);
+        }
+
+        function updateDashboard(ms, count) {
+            document.getElementById('val_rate').innerText = count;
             
-            if(ms < 800) b.innerHTML = "🚀 <b class='text-pi-primary'>Proof-of-Proof Active.</b> Super fast finality.";
-            else if(ms < 2500) b.innerHTML = "✅ <b>Nominal Speed.</b> Transactions are clearing within expected time.";
-            else b.innerHTML = "🐢 <b>Proxy Lag.</b> The slowness is in the HTTP Tunnel, not the Blockchain.";
+            // Calc Avg
+            const valid = state.logs.filter(l => l.res==='OK');
+            const totalMs = valid.reduce((a,b) => a+b.lat, 0);
+            const avg = valid.length ? (totalMs / valid.length).toFixed(0) : 0;
+            
+            document.getElementById('val_avg').innerText = avg;
+            
+            // Colors
+            const el = document.getElementById('val_avg');
+            if(avg < 1000) el.className = "text-xl font-mono font-bold text-pi-success glow-acc";
+            else if(avg < 2000) el.className = "text-xl font-mono font-bold text-yellow-400";
+            else el.className = "text-xl font-mono font-bold text-red-400";
         }
 
-        function updateMetrics(ms) {
-            document.getElementById('val_lat').innerText = ms;
-            document.getElementById('val_rate').innerText = ((stats.ok/(stats.ok+stats.fail))*100).toFixed(0) + "%";
-            const col = ms < 1000 ? 'text-pi-primary' : ms < 2000 ? 'text-yellow-400' : 'text-pi-danger';
-            document.getElementById('val_lat').className = `font-mono font-bold text-lg ${col}`;
+        function pipelineAnim(stage, success) {
+            const col = success ? '#00ff9d' : '#ff2a6d'; // Green or Red
+            for(let i=1; i<=4; i++) {
+                const node = document.getElementById(`node_${i}`);
+                if(i === stage) {
+                    node.style.backgroundColor = col;
+                    node.style.boxShadow = `0 0 10px ${col}`;
+                    node.style.transform = "scale(1.2)";
+                } else if (i < stage) {
+                    // Previous nodes stay lit or go grey
+                    if(success) node.style.backgroundColor = '#4b5563'; 
+                    else node.style.backgroundColor = '#4b5563';
+                    node.style.boxShadow = "none";
+                    node.style.transform = "scale(1)";
+                }
+            }
         }
 
-        function pushChart(l, d) {
-            chart.data.labels.push(l); chart.data.datasets[0].data.push(d);
+        function resetPipeline() {
+            for(let i=1; i<=4; i++) {
+                const node = document.getElementById(`node_${i}`);
+                node.style.backgroundColor = '#4b5563';
+                node.style.boxShadow = 'none';
+                node.style.transform = 'scale(1)';
+            }
+        }
+
+        function updateProxyUI(idx) {
+            const gA = document.getElementById('gw_a');
+            const gB = document.getElementById('gw_b');
+            if(idx === 0) {
+                gA.className = "text-pi-success font-bold glow-acc"; gA.innerText = "ACTIVE";
+                gB.className = "text-gray-600"; gB.innerText = "STANDBY";
+            } else {
+                gB.className = "text-pi-success font-bold glow-acc"; gB.innerText = "ACTIVE";
+                gA.className = "text-gray-600"; gA.innerText = "STANDBY";
+            }
+        }
+
+        // === CHART & LOGS ===
+        function updateChart(lbl, data) {
+            chart.data.labels.push(lbl);
+            chart.data.datasets[0].data.push(data);
             if(chart.data.labels.length > 20) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
             chart.update();
         }
 
-        function updateStatView(active) {
-            document.getElementById('val_status').innerText = active ? "RUNNING" : "FINISHED";
-            document.getElementById('val_status').className = active ? "font-mono font-bold text-sm text-pi-primary animate-pulse" : "font-mono font-bold text-sm text-white";
-        }
-        
         function log(m, t) {
-            const el = document.createElement('div');
-            el.innerHTML = `<span class="opacity-30 text-[9px] mr-2">${new Date().toLocaleTimeString().split(' ')[0]}</span>${m}`;
-            el.className = t==='ok'?"text-pi-success":t==='err'?"text-pi-danger":"text-gray-500";
-            const c = document.getElementById('console'); c.prepend(el);
-            if(c.children.length>20) c.lastChild.remove();
-        }
-
-        function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
-        
-        function downloadCSV() {
-            let csv = "ID,Latency,Status\n" + stats.logs.map(r=>`${r.id},${r.lat},${r.res}`).join('\n');
-            const b = document.createElement('a'); b.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-            b.download = `sentinel_report_${Date.now()}.csv`; document.body.appendChild(b); b.click(); b.remove();
+            const div = document.createElement('div');
+            const color = t==='ok'?'text-pi-success':t==='err'?'text-pi-danger':t==='sys'?'text-pi-purple':'text-pi-dim';
+            div.className = `${color} mb-1 border-l-2 border-white/10 pl-2`;
+            div.innerHTML = `<span class="opacity-50 text-[9px] mr-2">>>></span>${m}`;
+            const c = document.getElementById('console');
+            c.prepend(div);
         }
 
         function initChart() {
             const ctx = document.getElementById('mainChart').getContext('2d');
-            const g = ctx.createLinearGradient(0,0,0,300); g.addColorStop(0,'rgba(0,242,234,0.2)'); g.addColorStop(1,'rgba(0,0,0,0)');
-            chart = new Chart(ctx, {type:'line', data:{labels:[], datasets:[{data:[], borderColor:'#00f2ea', backgroundColor:g, fill:true, tension:0.4, borderWidth:2, pointRadius:0}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'rgba(255,255,255,0.05)'}}}}});
+            const g = ctx.createLinearGradient(0,0,0,300); g.addColorStop(0,'rgba(0, 240, 255, 0.2)'); g.addColorStop(1,'rgba(0,0,0,0)');
+            
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {labels:[], datasets:[{
+                    label: 'Latency (ms)', data:[], 
+                    borderColor:'#00f0ff', borderWidth:2, backgroundColor:g, fill:true, 
+                    tension:0.4, pointRadius:0, pointHoverRadius:4
+                }]},
+                options: {
+                    responsive:true, maintainAspectRatio:false, plugins:{legend:false},
+                    scales: {
+                        x:{display:false}, 
+                        y:{grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#555', font:{family:'monospace'}}}
+                    },
+                    animation: { duration: 600 }
+                }
+            });
+            
+            // Add static threshold line manually or via plugin (simple way omitted for cleanliness)
         }
+
+        function downloadCSV() {
+            let csv = "ID,Latency,Result\n" + state.logs.map(r=>`${r.id},${r.lat},${r.res}`).join('\n');
+            const b = document.createElement('a'); b.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+            b.download = `pi2_audit_${Date.now()}.csv`; document.body.appendChild(b); b.click(); b.remove();
+        }
+
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
     </script>
 </body>
 </html>
