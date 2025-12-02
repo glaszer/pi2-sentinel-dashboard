@@ -411,8 +411,9 @@
                 
                 stats.total = i;
                 document.getElementById('val_txs').innerText = i;
-                // Задержка чтобы не спамить и не получать 429
-                await new Promise(r => setTimeout(r, 2000));
+                // Если ошибок много, увеличиваем паузу до 3 секунд
+                const currentDelay = stats.fail > 2 ? 3000 : 2000;
+                await new Promise(r => setTimeout(r, currentDelay));
             }
 
             stopTest();
@@ -527,4 +528,5 @@
         }
     </script>
 </body>
+
 </html>
