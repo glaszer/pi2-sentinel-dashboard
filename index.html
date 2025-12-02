@@ -411,9 +411,10 @@
                 
                 stats.total = i;
                 document.getElementById('val_txs').innerText = i;
-                // Если ошибок много, увеличиваем паузу до 3 секунд
-                const currentDelay = stats.fail > 2 ? 3000 : 2000;
-                await new Promise(r => setTimeout(r, currentDelay));
+              // --- SAFE DELAY FIX ---
+                // Увеличиваем задержку до 3.5 сек, чтобы не злить прокси
+                log(`[Wait] Cooling down (3.5s)...`, 'dim'); 
+                await new Promise(r => setTimeout(r, 3500));
             }
 
             stopTest();
@@ -530,3 +531,4 @@
 </body>
 
 </html>
+
