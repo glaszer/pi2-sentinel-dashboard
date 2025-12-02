@@ -5,7 +5,7 @@
 > **The advanced diagnostic instrument for the Pi Squared Universal Settlement Layer.**  
 > Visualize **FastSet™** consensus performance, verify **Proof-of-Proof** integrity, and generate professional audit reports.
 
-![Dashboard Preview] 
+## Dashboard Preview
 
 <img width="1242" height="878" alt="screenshot png" src="https://github.com/user-attachments/assets/b3879256-0b97-4d82-a23c-5d94f0d679e8" />
 
@@ -52,7 +52,8 @@ Simply navigate to the deployed link (replace with your repo link):
    git clone https://github.com/your-username/pi2-sentinel.git
    cd pi2-sentinel
 
-Run:
+## Run:
+
 Simply open index.html in your browser.
 (Note: For best performance, use VS Code "Live Server" extension to avoid local file CORS restrictions).
 
