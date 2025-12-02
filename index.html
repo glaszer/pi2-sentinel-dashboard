@@ -3,42 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi2 Sentinel | v9.0 Architect</title>
+    <title>Pi2 Sentinel | v10 Observer</title>
     
-    <!-- LIBRARIES -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- FONTS & LIBS -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- CONFIG & THEME -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        pi: {
-                            base: '#030305',
-                            panel: '#0a0a0f',
-                            accent: '#00f0ff', // Cyber Cyan
-                            purple: '#bd00ff', // Cyber Purple
-                            success: '#00ff9d',
-                            warn: '#ffeb3b',
-                            danger: '#ff2a6d',
-                            dim: '#4b5563'
-                        }
+                        bg: '#050505',
+                        panel: '#0a0a0c',
+                        primary: '#00f0ff',
+                        accent: '#7b2cbf',
+                        success: '#00ff9d',
+                        danger: '#ff2a6d',
+                        dim: '#4b5563'
                     },
                     fontFamily: {
                         mono: ['"JetBrains Mono"', 'monospace'],
-                        hud: ['"Rajdhani"', 'sans-serif']
-                    },
-                    animation: {
-                        'spin-slow': 'spin 8s linear infinite',
-                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'scan': 'scan 4s linear infinite'
-                    },
-                    keyframes: {
-                        scan: { '0%': { top: '0%' }, '100%': { top: '100%' } }
+                        display: ['"Space Grotesk"', 'sans-serif']
                     }
                 }
             }
@@ -46,501 +34,464 @@
     </script>
 
     <style>
-        body { background-color: #030305; background-image: radial-gradient(#111 1px, transparent 0); background-size: 40px 40px; color: #eee; overflow-x: hidden; }
+        body { background-color: #050505; color: #e2e8f0; overflow-x: hidden; }
         
-        /* Glass Panels */
+        /* Скроллбары */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0c; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
+
         .glass {
-            background: rgba(10, 10, 15, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            background: rgba(15, 15, 20, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
         }
         
-        /* Neon Glows */
-        .glow-acc { box-shadow: 0 0 10px rgba(0, 240, 255, 0.3); border-color: rgba(0, 240, 255, 0.5); }
-        .glow-pur { box-shadow: 0 0 10px rgba(189, 0, 255, 0.3); }
-        
-        /* Custom Elements */
-        .tech-border { position: relative; }
-        .tech-border::after { content: ''; position: absolute; top: -1px; right: -1px; width: 10px; height: 10px; border-top: 2px solid #00f0ff; border-right: 2px solid #00f0ff; }
-        .tech-border::before { content: ''; position: absolute; bottom: -1px; left: -1px; width: 10px; height: 10px; border-bottom: 2px solid #00f0ff; border-left: 2px solid #00f0ff; }
+        /* Анимации текста */
+        .fade-in { animation: fadeIn 0.8s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        .scanline { position: absolute; left: 0; width: 100%; height: 2px; background: rgba(0, 240, 255, 0.5); opacity: 0.5; box-shadow: 0 0 10px rgba(0, 240, 255, 1); pointer-events: none; }
+        .scanline {
+            width: 100%; height: 2px; background: rgba(0, 240, 255, 0.5);
+            position: absolute; opacity: 0.5; animation: scan 4s linear infinite; pointer-events: none;
+        }
+        @keyframes scan { 0% {top:0;} 100% {top:100%;} }
+        
+        .pulse-border { animation: pborder 2s infinite; }
+        @keyframes pborder { 0% {border-color: rgba(0,240,255,0.2);} 50% {border-color: rgba(0,240,255,0.8);} 100% {border-color: rgba(0,240,255,0.2);} }
     </style>
 </head>
-<body class="font-sans antialiased relative min-h-screen flex flex-col">
+<body class="font-display min-h-screen flex flex-col relative selection:bg-primary selection:text-black">
 
-    <!-- HEADER HUD -->
-    <header class="w-full border-b border-white/5 bg-pi-base/90 backdrop-blur sticky top-0 z-50">
+    <div class="fixed inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/5 via-bg to-bg -z-10"></div>
+
+    <!-- HEADER -->
+    <header class="border-b border-white/5 bg-bg/90 backdrop-blur z-50 sticky top-0">
         <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-gradient-to-tr from-pi-purple to-pi-accent flex items-center justify-center font-bold text-black rounded text-sm tech-border">π²</div>
-                <div>
-                    <h1 class="font-hud font-bold text-xl tracking-[0.2em] text-white">SENTINEL <span class="text-pi-accent">ARCHITECT</span></h1>
-                </div>
+                <div class="w-8 h-8 rounded border border-primary/30 flex items-center justify-center font-bold font-mono text-primary bg-primary/5">π²</div>
+                <h1 class="text-lg font-bold tracking-widest uppercase">Sentinel <span class="text-primary text-xs border border-primary/30 px-1 rounded ml-1">v10</span></h1>
             </div>
-            
-            <div class="flex gap-4 items-center">
-                <div class="hidden md:flex text-[10px] font-mono gap-4 text-pi-dim">
-                    <span>NET: <b class="text-pi-success">DEVNET 2.0</b></span>
-                    <span>PROTO: <b class="text-white">COSMOS SDK</b></span>
-                    <span>LAYER: <b class="text-pi-purple">USL</b></span>
-                </div>
-                <div class="h-8 w-[1px] bg-white/10"></div>
-                <button onclick="toggleLang()" class="font-mono text-xs font-bold border border-white/20 px-3 py-1 rounded hover:bg-white/10 text-pi-accent transition" id="langBtn">EN</button>
+            <div class="flex items-center gap-4">
+                <div class="hidden md:block text-[10px] font-mono text-dim">USL: <span class="text-success">ACTIVE</span> | LATENCY: <span class="text-white">LOW</span></div>
+                <button onclick="toggleLang()" class="text-xs font-bold border border-white/10 px-3 py-1.5 rounded hover:bg-white/5 transition" id="langBtn">EN / RU</button>
             </div>
         </div>
     </header>
 
-    <!-- MAIN DASHBOARD -->
-    <div class="flex-grow max-w-7xl mx-auto w-full px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- MAIN GRID -->
+    <main class="flex-grow p-4 md:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- LEFT COLUMN: CONTROLS (3 COLS) -->
+        <!-- COL 1: CONTROL (3 COLS) -->
         <aside class="lg:col-span-3 flex flex-col gap-4">
-            <!-- WALLET -->
-            <div class="glass p-5 rounded relative group">
-                <div class="tech-border w-full h-full absolute top-0 left-0 pointer-events-none opacity-0 group-hover:opacity-100 transition duration-500"></div>
-                <h2 class="text-xs font-hud font-bold text-pi-dim tracking-widest mb-4 flex items-center gap-2">
-                    <i class="fas fa-terminal"></i> UPLINK CONFIG
-                </h2>
-                
-                <div id="setupForm" class="space-y-3">
-                     <div class="bg-red-500/10 border-l-2 border-red-500 p-2 text-[9px] text-gray-300 leading-tight">
-                         ⚠️ TESTNET ONLY. Keys are locally stored (Browser RAM/Storage).
-                     </div>
-                     <div>
-                         <label class="text-[9px] uppercase text-pi-accent font-bold">Target Address</label>
-                         <input type="text" id="inp_addr" class="w-full bg-black/50 border border-white/10 text-white text-[10px] p-2 font-mono focus:border-pi-accent focus:outline-none transition" placeholder="set1...">
-                     </div>
-                     <div>
-                         <label class="text-[9px] uppercase text-pi-accent font-bold">Private Key</label>
-                         <input type="password" id="inp_pk" class="w-full bg-black/50 border border-white/10 text-white text-[10px] p-2 font-mono focus:border-pi-accent focus:outline-none transition" placeholder="0x...">
-                     </div>
-                     <button onclick="saveConfig()" id="btn_conn" class="w-full mt-2 bg-pi-accent/10 border border-pi-accent/50 hover:bg-pi-accent hover:text-black text-pi-accent text-xs font-bold py-2 uppercase transition-all duration-300">
-                        Initialize
-                     </button>
+            <!-- WALLET CONFIG -->
+            <div class="glass p-5 rounded-lg flex flex-col gap-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xs font-bold text-dim uppercase tracking-widest"><i class="fas fa-key mr-2"></i>Credentials</h2>
+                    <div id="status_dot" class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_red]"></div>
                 </div>
 
-                <div id="connectedView" class="hidden">
-                    <div class="flex flex-col items-center py-4">
-                        <div class="w-12 h-12 rounded-full border border-pi-success/30 flex items-center justify-center mb-2 shadow-[0_0_15px_rgba(0,255,157,0.2)]">
-                            <i class="fas fa-link text-pi-success"></i>
-                        </div>
-                        <div class="text-[10px] font-mono text-gray-500 mb-1">CONNECTED IDENTITY</div>
-                        <div id="display_addr" class="text-[10px] font-mono text-white bg-white/5 p-1 rounded px-2 mb-4 border border-white/10">...</div>
-                        <button onclick="disconnect()" class="text-[10px] text-pi-danger hover:underline">TERMINATE SESSION</button>
+                <!-- Input View -->
+                <div id="setupView" class="space-y-3">
+                    <div class="text-[10px] bg-white/5 p-2 rounded text-gray-400 border border-white/5">
+                        <i class="fas fa-shield-alt mr-1"></i> Use <b>Burner Wallet</b> (Testnet) Only.
                     </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-primary uppercase font-bold">Address</label>
+                        <input type="text" id="inp_addr" class="w-full bg-black/40 border border-white/10 p-2 text-[10px] font-mono rounded text-white focus:border-primary focus:outline-none" placeholder="set1...">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-primary uppercase font-bold">Private Key</label>
+                        <input type="password" id="inp_pk" class="w-full bg-black/40 border border-white/10 p-2 text-[10px] font-mono rounded text-white focus:border-primary focus:outline-none" placeholder="0x...">
+                    </div>
+                    <button onclick="saveConfig()" id="btn_conn" class="w-full bg-primary/10 border border-primary/30 text-primary hover:bg-primary hover:text-black font-bold text-xs py-2 rounded transition mt-2">INITIALIZE</button>
+                </div>
+
+                <!-- Connected View -->
+                <div id="connView" class="hidden text-center py-2 animate-pulse">
+                    <p class="text-[10px] text-gray-500 mb-1">TARGET IDENTITY</p>
+                    <div id="display_addr" class="font-mono text-[10px] text-success truncate px-2 bg-success/5 border border-success/10 rounded py-1">...</div>
+                    <button onclick="disconnect()" class="text-[10px] text-danger hover:underline mt-4">TERMINATE SESSION</button>
                 </div>
             </div>
 
-            <!-- PROXY STATUS -->
-            <div class="glass p-4 rounded text-center">
-                 <h3 class="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-2">TUNNEL STATUS</h3>
-                 <div class="flex justify-between items-center text-[10px] font-mono bg-black/40 p-2 rounded mb-1">
-                     <span class="text-gray-400">GATEWAY A</span>
-                     <span id="gw_a" class="text-pi-success">ONLINE</span>
-                 </div>
-                 <div class="flex justify-between items-center text-[10px] font-mono bg-black/40 p-2 rounded">
-                     <span class="text-gray-400">GATEWAY B</span>
-                     <span id="gw_b" class="text-gray-600">STANDBY</span>
-                 </div>
+            <!-- PROXY MONITOR -->
+            <div class="glass p-4 rounded-lg">
+                <h3 class="text-[9px] font-bold text-dim uppercase tracking-widest mb-3">TUNNEL DIAGNOSTICS</h3>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-[10px] font-mono text-gray-400">GATEWAY A</span>
+                    <span id="gw_a" class="text-[9px] bg-white/5 px-2 rounded text-dim">STANDBY</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-mono text-gray-400">GATEWAY B</span>
+                    <span id="gw_b" class="text-[9px] bg-white/5 px-2 rounded text-dim">STANDBY</span>
+                </div>
             </div>
         </aside>
 
-        <!-- MIDDLE COLUMN: VISUALS (6 COLS) -->
-        <main class="lg:col-span-6 flex flex-col gap-4">
+        <!-- COL 2: VISUALIZATION (6 COLS) -->
+        <section class="lg:col-span-6 flex flex-col gap-4">
             
-            <!-- PIPELINE VISUALIZER -->
-            <div class="glass p-1 rounded relative h-16 flex items-center justify-between px-6 border-t border-pi-accent/20">
-                <!-- Node 1: User -->
-                <div class="flex flex-col items-center z-10">
-                    <div id="node_1" class="w-3 h-3 bg-gray-600 rounded-full transition-colors duration-300"></div>
-                    <span class="text-[9px] text-gray-500 mt-1 uppercase">User</span>
+            <!-- PIPELINE VISUALIZER (Fixed Layout) -->
+            <div class="glass h-14 rounded-lg flex items-center justify-between px-6 relative overflow-hidden">
+                <!-- User -->
+                <div class="flex flex-col items-center z-10 w-8">
+                    <div id="p_1" class="w-2.5 h-2.5 bg-dim rounded-full transition-colors duration-500"></div>
+                    <span class="text-[8px] text-dim mt-1 uppercase">Init</span>
                 </div>
-                <!-- Connector -->
-                <div class="flex-grow h-[1px] bg-white/10 mx-2 relative overflow-hidden">
-                    <div id="anim_line" class="absolute left-[-100%] w-[50%] h-full bg-gradient-to-r from-transparent via-pi-accent to-transparent"></div>
+                <!-- Line -->
+                <div class="h-[1px] bg-white/5 flex-grow mx-1 relative">
+                    <div id="line_1" class="absolute h-full w-0 bg-primary transition-all duration-1000"></div>
                 </div>
-                <!-- Node 2: Proxy -->
-                <div class="flex flex-col items-center z-10">
-                    <div id="node_2" class="w-3 h-3 bg-gray-600 rounded-full transition-colors duration-300"></div>
-                    <span class="text-[9px] text-gray-500 mt-1 uppercase">Proxy</span>
+                <!-- Gateway -->
+                <div class="flex flex-col items-center z-10 w-8">
+                    <div id="p_2" class="w-2.5 h-2.5 bg-dim rounded-full transition-colors duration-500"></div>
+                    <span class="text-[8px] text-dim mt-1 uppercase">Tunnel</span>
                 </div>
-                <!-- Connector -->
-                <div class="flex-grow h-[1px] bg-white/10 mx-2 relative"></div>
-                <!-- Node 3: Network -->
-                <div class="flex flex-col items-center z-10">
-                    <div id="node_3" class="w-3 h-3 bg-gray-600 rounded-full transition-colors duration-300"></div>
-                    <span class="text-[9px] text-gray-500 mt-1 uppercase">FastSet</span>
+                 <!-- Line -->
+                 <div class="h-[1px] bg-white/5 flex-grow mx-1 relative">
+                    <div id="line_2" class="absolute h-full w-0 bg-primary transition-all duration-1000"></div>
                 </div>
-                <!-- Connector -->
-                <div class="flex-grow h-[1px] bg-white/10 mx-2 relative"></div>
-                <!-- Node 4: Consensus -->
-                <div class="flex flex-col items-center z-10">
-                    <div id="node_4" class="w-4 h-4 border border-gray-600 rounded flex items-center justify-center transition-colors duration-300">
-                        <i class="fas fa-check text-[8px] text-black"></i>
+                <!-- Network -->
+                <div class="flex flex-col items-center z-10 w-8">
+                    <div id="p_3" class="w-2.5 h-2.5 bg-dim rounded-full transition-colors duration-500"></div>
+                    <span class="text-[8px] text-dim mt-1 uppercase">USL</span>
+                </div>
+                 <!-- Line -->
+                 <div class="h-[1px] bg-white/5 flex-grow mx-1 relative">
+                    <div id="line_3" class="absolute h-full w-0 bg-success transition-all duration-1000"></div>
+                </div>
+                <!-- Done -->
+                <div class="flex flex-col items-center z-10 w-8">
+                    <div id="p_4" class="w-3 h-3 border border-dim rounded-full flex items-center justify-center transition-all duration-500 bg-panel">
+                        <i class="fas fa-check text-[6px] text-transparent transition-colors duration-300" id="check_icon"></i>
                     </div>
-                    <span class="text-[9px] text-gray-500 mt-1 uppercase">Finality</span>
+                    <span class="text-[8px] text-dim mt-1 uppercase">Final</span>
                 </div>
             </div>
 
-            <!-- CHART HUD -->
-            <div class="glass p-4 rounded-xl flex-grow flex flex-col min-h-[300px] relative overflow-hidden">
-                <div class="absolute top-4 left-5 z-20 flex gap-4">
-                    <div>
-                        <p class="text-[9px] text-gray-500 uppercase">AVG LATENCY</p>
-                        <p class="text-xl font-mono font-bold text-white"><span id="val_avg">0</span> <span class="text-xs text-pi-accent">ms</span></p>
-                    </div>
-                    <div>
-                         <p class="text-[9px] text-gray-500 uppercase">TX RATE</p>
-                         <p class="text-xl font-mono font-bold text-white"><span id="val_rate">0</span><span class="text-gray-600">/20</span></p>
+            <!-- CHART AREA -->
+            <div class="glass p-1 rounded-xl flex-grow min-h-[300px] flex flex-col relative">
+                <!-- Overlay HUD -->
+                <div class="absolute top-4 left-4 z-10 pointer-events-none">
+                    <div class="flex gap-4">
+                        <div>
+                            <p class="text-[9px] text-gray-500 uppercase">LATENCY</p>
+                            <p class="text-xl font-mono font-bold text-white"><span id="val_avg">0</span> <span class="text-primary text-xs">ms</span></p>
+                        </div>
+                        <div>
+                            <p class="text-[9px] text-gray-500 uppercase">TX INDEX</p>
+                            <p class="text-xl font-mono font-bold text-white"><span id="val_idx">0</span><span class="text-gray-600 text-sm">/20</span></p>
+                        </div>
                     </div>
                 </div>
-                
-                <!-- Live Indicator -->
-                <div id="live_tag" class="hidden absolute top-4 right-5 z-20 flex items-center gap-2">
-                     <span class="text-[9px] text-pi-danger font-bold tracking-widest animate-pulse">LIVE FEED</span>
-                     <div class="w-2 h-2 bg-pi-danger rounded-full animate-ping"></div>
-                </div>
-
-                <div class="mt-10 flex-grow relative">
+                <div class="flex-grow relative">
                     <canvas id="mainChart"></canvas>
                 </div>
             </div>
 
-            <!-- LOG TERMINAL -->
-            <div class="glass p-3 h-48 bg-black/60 font-mono text-[10px] overflow-y-auto relative rounded custom-scroll border border-white/5" id="console">
-                 <div class="text-pi-accent mb-1">>>> SYSTEM INITIALIZED... v9.0 Architect</div>
-                 <div class="text-gray-500 mb-1">>>> TARGET PAYLOAD: INTEGER (SAFE-MODE)</div>
-                 <div class="text-pi-dim">>>> STANDBY...</div>
+            <!-- CONTROLS & LOG -->
+            <div class="grid grid-cols-2 gap-4 h-40">
+                <div class="glass p-3 rounded-lg overflow-y-auto font-mono text-[9px] border border-white/5 relative" id="console">
+                    <div class="scanline"></div>
+                    <div class="text-primary mb-1">> System Initialized.</div>
+                    <div class="text-dim italic">> Ready for Benchmark.</div>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <button id="btn_start" onclick="startSequence()" disabled class="h-full bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded font-bold tracking-widest text-sm transition disabled:opacity-30 disabled:cursor-not-allowed">
+                        START
+                    </button>
+                    <button onclick="abortSequence()" class="h-10 border border-danger/30 text-danger/70 hover:text-danger hover:bg-danger/10 text-[10px] rounded uppercase">Stop</button>
+                </div>
             </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-                 <button id="btn_start" onclick="startTest()" disabled class="bg-pi-accent text-black font-bold font-hud tracking-widest text-sm py-3 rounded disabled:opacity-20 hover:scale-[1.01] active:scale-[0.99] transition shadow-[0_0_20px_rgba(0,240,255,0.3)]">
-                     INITIATE SEQUENCE
-                 </button>
-                 <button onclick="stopTest()" class="border border-white/10 text-gray-400 hover:text-white font-hud tracking-widest text-sm py-3 rounded hover:bg-white/5 transition">
-                     ABORT
-                 </button>
-            </div>
-        </main>
+        </section>
 
-        <!-- RIGHT COLUMN: KNOWLEDGE BASE (3 COLS) -->
-        <aside class="lg:col-span-3 flex flex-col gap-4">
-            <div class="glass h-full rounded p-5 relative overflow-hidden flex flex-col border-t-2 border-pi-purple">
-                <div class="absolute top-2 right-2 opacity-10">
-                    <i class="fas fa-brain text-4xl text-pi-purple"></i>
-                </div>
-                <h3 class="text-xs font-bold text-pi-dim uppercase tracking-widest mb-6">Info Feed</h3>
+        <!-- COL 3: INFO FEED (3 COLS) -->
+        <aside class="lg:col-span-3 flex flex-col h-full">
+            <div class="glass h-full rounded-lg p-5 flex flex-col border-t-2 border-accent relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-accent/5 to-transparent pointer-events-none"></div>
                 
-                <!-- DYNAMIC CARD CONTAINER -->
-                <div id="edu_container" class="flex-grow flex flex-col items-center justify-center text-center transition-all duration-500">
-                    <div class="p-4 bg-white/5 rounded border border-white/5 mb-4">
-                        <i class="fas fa-info-circle text-2xl text-gray-600 mb-2"></i>
-                        <p class="text-xs text-gray-400 italic">Wait mode.</p>
-                        <p class="text-[10px] text-gray-600 mt-2 leading-relaxed">
-                            Initialize the benchmark to verify FastSet performance and unlock the data stream.
-                        </p>
+                <h3 class="text-[10px] font-bold text-accent uppercase tracking-widest mb-4 z-10 flex justify-between">
+                    <span>LIVE ANALYSIS</span>
+                    <i class="fas fa-satellite-dish animate-pulse"></i>
+                </h3>
+
+                <!-- DYNAMIC INFO CARD -->
+                <div id="info_card" class="z-10 flex-grow flex items-center justify-center">
+                    <div class="text-center">
+                        <i class="fas fa-layer-group text-3xl text-dim mb-4 block"></i>
+                        <p class="text-xs text-dim uppercase">Awaiting Data Stream</p>
                     </div>
                 </div>
-                
-                <div class="mt-auto border-t border-white/5 pt-4">
-                    <p class="text-[9px] text-gray-500 uppercase mb-2">Reference Data</p>
-                    <div class="flex items-center gap-2 mb-1">
-                        <div class="w-1 h-1 bg-pi-accent"></div>
-                        <span class="text-[10px] text-white">USL (Universal Settlement Layer)</span>
-                    </div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <div class="w-1 h-1 bg-pi-purple"></div>
-                        <span class="text-[10px] text-white">K-Framework Verifiability</span>
-                    </div>
-                     <button onclick="downloadCSV()" id="btn_export" class="hidden w-full mt-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] py-2 rounded transition flex items-center justify-center gap-2">
-                         <i class="fas fa-download"></i> EXPORT LOGS
-                     </button>
+
+                <!-- Export Area -->
+                <div class="z-10 pt-4 mt-4 border-t border-white/5">
+                    <button id="btn_export" onclick="downloadReport()" class="hidden w-full bg-success/10 border border-success/30 text-success text-[10px] py-2 rounded hover:bg-success/20 transition uppercase font-bold">
+                        <i class="fas fa-download mr-1"></i> Download CSV Report
+                    </button>
                 </div>
             </div>
         </aside>
 
-    </div>
+    </main>
 
+    <footer class="text-center py-4 text-[9px] text-dim opacity-50 uppercase tracking-widest">
+        Unofficial Pi Squared Diagnostic Tool v10.0
+    </footer>
+
+    <!-- ENGINE -->
     <script>
-        // === CORE CONFIG ===
-        const API_URL = "https://api.wallet.fastset.xyz/api/transferToken";
+        // === SETTINGS ===
+        const API_EP = "https://api.wallet.fastset.xyz/api/transferToken";
         const PROXIES = [
             (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
             (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
         ];
         const TID = "0xfa575e7000000000000000000000000000000000000000000000000000000000";
 
-        // === EDUCATIONAL DATABASE ===
-        const FACTS = [
-            { t: "Proof-of-Proof", d: "Pi Squared doesn't just re-execute transactions. Instead, it checks the cryptographic proof of validity. This allows for massive scalability." },
-            { t: "FastSet Consensus", d: "You are witnessing sub-second finality. FastSet decouples transaction dissemination from execution to achieve low latency." },
-            { t: "Universal Settlement", d: "Pi2 acts as a USL (Universal Settlement Layer). It can verify computations from Ethereum, Solana, or any other chain agnostically." },
-            { t: "K-Framework", d: "This implies formal semantics. Any language (C++, Rust, Python) defined in K can be mathematically verified on Pi2." },
-            { t: "Optimistic Response", d: "If the chart shows <1000ms, the network is outpacing standard EVM block times significantly." }
-        ];
-
-        let state = { run: false, lang: 'en', wallet: {a:'',k:''}, logs: [], ok:0, fail:0 };
-        let chart;
-        let factInterval;
-
-        // === INITIALIZATION ===
-        window.onload = () => {
-            initChart();
-            if(localStorage.getItem('p2a')) {
-                state.wallet.a = localStorage.getItem('p2a');
-                state.wallet.k = localStorage.getItem('p2k');
-                toggleUI(true);
+        // === LOCALIZATION & CONTENT ===
+        const CONTENT = {
+            en: {
+                ready: "Ready",
+                phase1: { t: "Initiating Transaction", d: "Signing transaction with your private key (locally) and broadcasting to the Gateway." },
+                phase2: { t: "CORS Tunneling", d: "Passing through the public HTTP proxy to bypass browser security restrictions." },
+                phase3: { t: "Proof-of-Proof", d: "<b>FastSet</b> Consensus is now verifying the cryptographic validity of the computation." },
+                phase4: { t: "Finalized", d: "Transaction included in the block. Pi2 architecture decouples execution from verification for speed." },
+                phase5: { t: "Cool Down", d: "Pausing to prevent rate-limiting on public API nodes. Next tx in 3s..." },
+                err: { t: "Network Throttled", d: "Public Gateway rejected the connection. Rotating IP address automatically..." }
+            },
+            ru: {
+                ready: "Готов",
+                phase1: { t: "Создание Транзакции", d: "Локальная подпись ключом и отправка пакета на Шлюз (Gateway)." },
+                phase2: { t: "CORS Туннель", d: "Данные проходят через публичный прокси для обхода блокировок браузера." },
+                phase3: { t: "Proof-of-Proof", d: "Консенсус <b>FastSet</b> проверяет криптографическое доказательство корректности." },
+                phase4: { t: "Финализация", d: "Транзакция включена в блок. Pi2 разделяет выполнение и проверку для максимальной скорости." },
+                phase5: { t: "Пауза", d: "Ожидание во избежание спам-фильтров API. Следующая транзакция через 3 сек..." },
+                err: { t: "Лимит Шлюза", d: "Публичный шлюз сбросил соединение. Меняем маршрут..." }
             }
         };
 
-        // === CONNECTION ===
+        // === STATE ===
+        let app = { run: false, lang: 'en', logs: [], ok: 0, fail: 0, pIdx: 0, wallet: {} };
+        let chart;
+
+        // === STARTUP ===
+        window.onload = () => {
+            initChart();
+            if(localStorage.getItem('ps_addr')) {
+                app.wallet = { a: localStorage.getItem('ps_addr'), k: localStorage.getItem('ps_key') };
+                setUIState('connected');
+            }
+        };
+
+        function toggleLang() {
+            app.lang = app.lang === 'en' ? 'ru' : 'en';
+            document.getElementById('langBtn').innerText = app.lang === 'en' ? 'EN / RU' : 'RU / EN';
+        }
+
         function saveConfig() {
             const a = document.getElementById('inp_addr').value.trim();
             const k = document.getElementById('inp_pk').value.trim();
-            if(!a.startsWith('set1') || !k.startsWith('0x')) return alert("Format Error! Check console.");
-            localStorage.setItem('p2a', a); localStorage.setItem('p2k', k);
-            state.wallet = { a, k };
-            toggleUI(true);
-            log("Credentials Secured in LocalStorage.", 'sys');
+            if(!a.startsWith('set1') || !k.startsWith('0x')) return alert("Format Error!");
+            
+            localStorage.setItem('ps_addr', a); localStorage.setItem('ps_key', k);
+            app.wallet = { a, k };
+            setUIState('connected');
         }
 
-        function disconnect() {
-            localStorage.clear(); state.wallet = {a:'',k:''}; toggleUI(false);
-            log("Session Terminated.", 'sys');
-        }
+        function disconnect() { localStorage.clear(); app.wallet = {}; setUIState('disconnected'); }
 
-        function toggleUI(active) {
-            const form = document.getElementById('setupForm'), view = document.getElementById('connectedView'), btn = document.getElementById('btn_start');
-            if(active) {
-                form.classList.add('hidden'); view.classList.remove('hidden'); btn.disabled = false;
-                document.getElementById('display_addr').innerText = state.wallet.a;
+        function setUIState(state) {
+            const sView = document.getElementById('setupView'), cView = document.getElementById('connView'), btn = document.getElementById('btn_start');
+            const dot = document.getElementById('status_dot');
+            
+            if(state === 'connected') {
+                sView.classList.add('hidden'); cView.classList.remove('hidden'); btn.disabled = false;
+                document.getElementById('display_addr').innerText = app.wallet.a;
+                dot.className = "w-2 h-2 rounded-full bg-success shadow-[0_0_8px_#00ff9d]";
             } else {
-                form.classList.remove('hidden'); view.classList.add('hidden'); btn.disabled = true;
+                sView.classList.remove('hidden'); cView.classList.add('hidden'); btn.disabled = true;
+                dot.className = "w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_red]";
             }
         }
 
-        // === MAIN ENGINE ===
-        async function startTest() {
-            if(state.run) return;
-            state.run = true;
-            state.ok = 0; state.fail = 0; state.logs = [];
-            chart.data.labels = []; chart.data.datasets[0].data = []; chart.update();
-            
-            document.getElementById('live_tag').classList.remove('hidden');
+        // === CORE LOGIC ===
+        async function startSequence() {
+            if(app.run) return;
+            app.run = true;
+            app.ok = 0; app.fail = 0; app.logs = [];
+            resetChart();
             document.getElementById('btn_export').classList.add('hidden');
-            
-            // Start Info Feed Rotation
-            startEducationFeed();
+            document.getElementById('btn_start').innerText = "RUNNING...";
+            document.getElementById('btn_start').classList.add('text-primary', 'pulse-border');
 
-            const MAX = 20;
-            let pIdx = 0;
+            for(let i=1; i<=20; i++) {
+                if(!app.run) break;
 
-            for(let i=1; i<=MAX; i++) {
-                if(!state.run) break;
-
-                // Proxy Selection UI
-                updateProxyUI(pIdx % 2);
-                
-                // Visualization Reset
+                // 1. SETUP UI FOR STEP
                 resetPipeline();
-                pipelineAnim(1, true); // User active
-
-                const url = PROXIES[pIdx % PROXIES.length](API_URL);
-                log(`Constructing Transaction #${i}...`, 'dim');
+                updateProxyStatus(app.pIdx);
+                const gw = PROXIES[app.pIdx % PROXIES.length];
+                const url = gw(API_EP);
                 
-                const startT = Date.now();
-                pipelineAnim(2, true); // Proxy active
-                document.getElementById('anim_line').style.animation = "scan 1s infinite linear";
-
+                // STEP 1: INIT
+                updateInfoCard(CONTENT[app.lang].phase1);
+                updatePipeline(1);
+                log(`TX #${i}: Signed. Broadcasting...`, 'norm');
+                await sleep(500); // UI Pause for reading
+                
+                // STEP 2: PROXY
+                updateInfoCard(CONTENT[app.lang].phase2);
+                updatePipeline(2);
+                
+                const tStart = Date.now();
+                
                 try {
-                    const res = await fetch(url, {
-                        method: 'POST', headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ sender: state.wallet.a, recipient: state.wallet.a, amount: "1", tokenId: TID, privateKey: state.wallet.k })
-                    });
+                    // NETWORK CALL
+                    updateInfoCard(CONTENT[app.lang].phase3);
+                    updatePipeline(3);
                     
-                    pipelineAnim(3, true); // FastSet Active
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ sender: app.wallet.a, recipient: app.wallet.a, amount: "1", tokenId: TID, privateKey: app.wallet.k })
+                    });
 
+                    // ERROR CHECK
                     if(!res.ok && res.status !== 200) throw new Error(`HTTP ${res.status}`);
 
-                    // Success Flow
-                    const ms = Date.now() - startT;
-                    state.ok++;
-                    state.logs.push({id:i, lat:ms, res:'OK'});
+                    // SUCCESS
+                    const lat = Date.now() - tStart;
+                    app.ok++;
+                    app.logs.push({id: i, ms: lat, status: 'OK'});
                     
-                    pipelineAnim(4, true); // Finality
-                    document.getElementById('anim_line').style.animation = "none";
+                    // UI UPDATES
+                    updatePipeline(4);
+                    updateInfoCard(CONTENT[app.lang].phase4);
+                    updateChart(i, lat);
+                    log(`> TX #${i} Confirmed: ${lat}ms`, 'ok');
+                    updateStats();
                     
-                    log(`Block Finalized: ${ms}ms`, 'ok');
-                    updateChart(i, ms);
-                    updateDashboard(ms, i);
-                    
-                    // Fact pop based on event
-                    showFact(FACTS[i % FACTS.length]);
-                    
-                    await sleep(2500); // Cool down
+                    // STEP 5: COOLDOWN (Giving user time to read "Finalized" card)
+                    await sleep(1500);
+                    updateInfoCard(CONTENT[app.lang].phase5);
+                    await sleep(2500);
 
                 } catch(e) {
-                    // Error Flow
-                    state.fail++;
-                    state.logs.push({id:i, lat:0, res:'ERR'});
-                    log(`Failed: ${e.message}`, 'err');
-                    pipelineAnim(2, false); // Proxy Fail Red
-                    document.getElementById('anim_line').style.animation = "none";
+                    app.fail++;
+                    app.logs.push({id: i, ms: 0, status: 'FAIL'});
+                    updateInfoCard(CONTENT[app.lang].err, true);
+                    log(`> TX #${i} Failed: Rate Limit`, 'err');
                     
-                    pIdx++; // Switch Proxy
-                    log("Re-routing Uplink...", 'sys');
-                    await sleep(3500);
+                    app.pIdx++; // Rotate Proxy
+                    log(`> System: Switching Gateway...`, 'dim');
+                    await sleep(4000);
                 }
             }
-            
-            stopTest();
+            abortSequence();
         }
 
-        function stopTest() {
-            state.run = false;
-            clearInterval(factInterval);
-            document.getElementById('live_tag').classList.add('hidden');
+        function abortSequence() {
+            app.run = false;
+            document.getElementById('btn_start').innerText = "RESTART SEQUENCE";
+            document.getElementById('btn_start').classList.remove('text-primary', 'pulse-border');
+            if(app.ok > 0) document.getElementById('btn_export').classList.remove('hidden');
+            log("> SEQUENCE STOPPED.", 'dim');
+            updateInfoCard({t:"Completed", d:"Benchmark finished. View stats or download report."}, false);
             resetPipeline();
-            document.getElementById('anim_line').style.animation = "none";
-            if(state.ok > 0) document.getElementById('btn_export').classList.remove('hidden');
-            log("SEQUENCE COMPLETE.", 'ok');
-            document.getElementById('edu_container').innerHTML = `<div class='text-center p-4 text-xs text-gray-500'>Diagnostics Finished.</div>`;
         }
 
         // === VISUALIZERS ===
-        function startEducationFeed() {
-            let i = 0;
-            showFact(FACTS[0]); // Immediate
-            // Fallback interval if transactions take long
-            factInterval = setInterval(() => {
-                if(!state.run) return;
-                i++;
-                // Only rotate if not driven by TX events
-            }, 8000); 
+        function updateInfoCard(content, isErr) {
+            const el = document.getElementById('info_card');
+            el.innerHTML = `
+                <div class="text-left w-full h-full flex flex-col justify-center fade-in">
+                    <h4 class="text-xs font-bold ${isErr ? 'text-danger' : 'text-primary'} uppercase tracking-widest mb-2">${content.t}</h4>
+                    <p class="text-[11px] text-gray-300 font-mono leading-relaxed border-l-2 ${isErr ? 'border-danger' : 'border-dim'} pl-3">${content.d}</p>
+                </div>
+            `;
         }
 
-        function showFact(f) {
-            const el = document.getElementById('edu_container');
-            // Fade Out
-            el.style.opacity = 0;
-            setTimeout(() => {
-                el.innerHTML = `
-                    <div class="glass p-4 rounded w-full border-t border-pi-purple animate-[pulse_0.5s_ease-out]">
-                        <h4 class="text-pi-purple font-hud font-bold tracking-widest text-xs uppercase mb-2">${f.t}</h4>
-                        <p class="text-[10px] text-gray-300 font-mono leading-relaxed">${f.d}</p>
-                    </div>
-                `;
-                // Fade In
-                el.style.opacity = 1;
-            }, 300);
-        }
-
-        function updateDashboard(ms, count) {
-            document.getElementById('val_rate').innerText = count;
+        function updatePipeline(stage) {
+            const cSuccess = "#00ff9d";
+            const cPending = "#00f0ff";
             
-            // Calc Avg
-            const valid = state.logs.filter(l => l.res==='OK');
-            const totalMs = valid.reduce((a,b) => a+b.lat, 0);
-            const avg = valid.length ? (totalMs / valid.length).toFixed(0) : 0;
-            
-            document.getElementById('val_avg').innerText = avg;
-            
-            // Colors
-            const el = document.getElementById('val_avg');
-            if(avg < 1000) el.className = "text-xl font-mono font-bold text-pi-success glow-acc";
-            else if(avg < 2000) el.className = "text-xl font-mono font-bold text-yellow-400";
-            else el.className = "text-xl font-mono font-bold text-red-400";
-        }
-
-        function pipelineAnim(stage, success) {
-            const col = success ? '#00ff9d' : '#ff2a6d'; // Green or Red
-            for(let i=1; i<=4; i++) {
-                const node = document.getElementById(`node_${i}`);
-                if(i === stage) {
-                    node.style.backgroundColor = col;
-                    node.style.boxShadow = `0 0 10px ${col}`;
-                    node.style.transform = "scale(1.2)";
-                } else if (i < stage) {
-                    // Previous nodes stay lit or go grey
-                    if(success) node.style.backgroundColor = '#4b5563'; 
-                    else node.style.backgroundColor = '#4b5563';
-                    node.style.boxShadow = "none";
-                    node.style.transform = "scale(1)";
-                }
+            // Activate nodes up to stage
+            for(let i=1; i<=stage; i++) {
+                document.getElementById(`p_${i}`).classList.remove('bg-dim');
+                document.getElementById(`p_${i}`).classList.add('bg-primary', 'shadow-[0_0_10px_#00f0ff]');
+            }
+            // Animate lines
+            if(stage >= 2) document.getElementById('line_1').style.width = "100%";
+            if(stage >= 3) document.getElementById('line_2').style.width = "100%";
+            if(stage >= 4) {
+                document.getElementById('line_3').style.width = "100%";
+                document.getElementById('p_4').classList.remove('bg-panel', 'border-dim');
+                document.getElementById('p_4').classList.add('bg-success', 'border-success', 'shadow-[0_0_15px_#00ff9d]');
+                document.getElementById('check_icon').classList.remove('text-transparent');
+                document.getElementById('check_icon').classList.add('text-black');
             }
         }
 
         function resetPipeline() {
-            for(let i=1; i<=4; i++) {
-                const node = document.getElementById(`node_${i}`);
-                node.style.backgroundColor = '#4b5563';
-                node.style.boxShadow = 'none';
-                node.style.transform = 'scale(1)';
+            for(let i=1; i<=3; i++) {
+                const p = document.getElementById(`p_${i}`);
+                p.className = "w-2.5 h-2.5 bg-dim rounded-full transition-colors duration-500";
             }
+            document.getElementById('p_4').className = "w-3 h-3 border border-dim rounded-full flex items-center justify-center transition-all duration-500 bg-panel";
+            document.getElementById('check_icon').classList.add('text-transparent');
+            document.getElementById('line_1').style.width = "0%";
+            document.getElementById('line_2').style.width = "0%";
+            document.getElementById('line_3').style.width = "0%";
         }
 
-        function updateProxyUI(idx) {
-            const gA = document.getElementById('gw_a');
-            const gB = document.getElementById('gw_b');
-            if(idx === 0) {
-                gA.className = "text-pi-success font-bold glow-acc"; gA.innerText = "ACTIVE";
-                gB.className = "text-gray-600"; gB.innerText = "STANDBY";
-            } else {
-                gB.className = "text-pi-success font-bold glow-acc"; gB.innerText = "ACTIVE";
-                gA.className = "text-gray-600"; gA.innerText = "STANDBY";
-            }
+        function updateProxyStatus(idx) {
+            const isActiveA = (idx % 2 === 0);
+            const a = document.getElementById('gw_a');
+            const b = document.getElementById('gw_b');
+            
+            a.innerText = isActiveA ? "ACTIVE" : "STANDBY";
+            a.className = isActiveA ? "text-[9px] bg-primary/20 text-primary px-2 rounded font-bold" : "text-[9px] bg-white/5 px-2 rounded text-dim";
+            
+            b.innerText = !isActiveA ? "ACTIVE" : "STANDBY";
+            b.className = !isActiveA ? "text-[9px] bg-primary/20 text-primary px-2 rounded font-bold" : "text-[9px] bg-white/5 px-2 rounded text-dim";
         }
 
-        // === CHART & LOGS ===
+        function updateStats() {
+            document.getElementById('val_idx').innerText = app.ok + app.fail;
+            const valid = app.logs.filter(x => x.status === 'OK');
+            const avg = valid.length ? (valid.reduce((a,b)=>a+b.ms,0) / valid.length).toFixed(0) : 0;
+            document.getElementById('val_avg').innerText = avg;
+        }
+
+        // === CHART & UTILS ===
         function updateChart(lbl, data) {
             chart.data.labels.push(lbl);
             chart.data.datasets[0].data.push(data);
             if(chart.data.labels.length > 20) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
             chart.update();
         }
+        function resetChart() { chart.data.labels=[]; chart.data.datasets[0].data=[]; chart.update(); }
 
         function log(m, t) {
-            const div = document.createElement('div');
-            const color = t==='ok'?'text-pi-success':t==='err'?'text-pi-danger':t==='sys'?'text-pi-purple':'text-pi-dim';
-            div.className = `${color} mb-1 border-l-2 border-white/10 pl-2`;
-            div.innerHTML = `<span class="opacity-50 text-[9px] mr-2">>>></span>${m}`;
-            const c = document.getElementById('console');
-            c.prepend(div);
+            const el = document.createElement('div');
+            el.innerHTML = `<span class="opacity-50 text-[9px] mr-2">::</span>${m}`;
+            el.className = t==='ok'?"text-success":t==='err'?"text-danger":t==='dim'?"text-dim":"text-primary";
+            document.getElementById('console').prepend(el);
         }
-
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+        function downloadReport() {
+            let csv = "ID,Latency,Status\n" + app.logs.map(r=>`${r.id},${r.ms},${r.status}`).join('\n');
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+            a.download = `pi2_sentinel_${Date.now()}.csv`; document.body.appendChild(a); a.click(); a.remove();
+        }
         function initChart() {
             const ctx = document.getElementById('mainChart').getContext('2d');
             const g = ctx.createLinearGradient(0,0,0,300); g.addColorStop(0,'rgba(0, 240, 255, 0.2)'); g.addColorStop(1,'rgba(0,0,0,0)');
-            
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: {labels:[], datasets:[{
-                    label: 'Latency (ms)', data:[], 
-                    borderColor:'#00f0ff', borderWidth:2, backgroundColor:g, fill:true, 
-                    tension:0.4, pointRadius:0, pointHoverRadius:4
-                }]},
-                options: {
-                    responsive:true, maintainAspectRatio:false, plugins:{legend:false},
-                    scales: {
-                        x:{display:false}, 
-                        y:{grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#555', font:{family:'monospace'}}}
-                    },
-                    animation: { duration: 600 }
-                }
-            });
-            
-            // Add static threshold line manually or via plugin (simple way omitted for cleanliness)
+            chart = new Chart(ctx, {type:'line', data:{labels:[], datasets:[{data:[], borderColor:'#00f0ff', backgroundColor:g, fill:true, tension:0.4, borderWidth:2, pointRadius:2}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:false}, scales:{x:{display:false}, y:{grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'#555'}}}}});
         }
-
-        function downloadCSV() {
-            let csv = "ID,Latency,Result\n" + state.logs.map(r=>`${r.id},${r.lat},${r.res}`).join('\n');
-            const b = document.createElement('a'); b.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-            b.download = `pi2_audit_${Date.now()}.csv`; document.body.appendChild(b); b.click(); b.remove();
-        }
-
-        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
     </script>
 </body>
 </html>
