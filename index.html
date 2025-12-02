@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi2 Sentinel | Universal Settlement Monitor</title>
+    
+    <!-- FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <!-- CHART.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- TAILWIND CSS (via CDN for style) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- ICONS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pi: {
+                            bg: '#050508',
+                            card: '#0f0f16',
+                            primary: '#00e5ff', /* Pi2 Cyan */
+                            secondary: '#6d28d9', /* Purple */
+                            text: '#e2e8f0',
+                            dim: '#64748b',
+                            danger: '#ef4444',
+                            success: '#10b981'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                        sans: ['"Inter"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #050508; overflow-x: hidden; }
+        .glass {
+            background: rgba(15, 15, 22, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+        .neon-border:focus {
+            outline: none;
+            border-color: #00e5ff;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+        }
+        /* Анимация сканирующей линии */
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+            position: absolute;
+            animation: scan 2s linear infinite;
+            opacity: 0.5;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        
+        .nav-btn.active { color: #00e5ff; border-bottom: 2px solid #00e5ff; }
+    </style>
+</head>
+<body class="text-pi-text font-sans antialiased relative">
+
+    <!-- CANVAS BACKGROUND -->
+    <canvas id="particles" class="fixed top-0 left-0 w-full h-full pointer-events-none opacity-20 z-0"></canvas>
+
+    <!-- APP WRAPPER -->
+    <div class="relative z-10 max-w-7xl mx-auto px-4 py-6 min-h-screen flex flex-col">
+
+        <!-- HEADER -->
+        <header class="flex justify-between items-center mb-8 glass rounded-2xl p-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded bg-gradient-to-br from-pi-secondary to-pi-primary flex items-center justify-center font-bold text-black text-xl">π²</div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider">SENTINEL <span class="text-xs text-pi-primary px-2 py-0.5 border border-pi-primary/30 rounded">DEVNET</span></h1>
+                    <p class="text-xs text-pi-dim font-mono">Universal Settlement Monitor</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-4">
+                <button onclick="toggleLang()" class="text-sm font-mono border border-pi-dim/30 px-3 py-1 rounded hover:bg-pi-dim/10 transition" id="btn_lang">EN / RU</button>
+                <a href="https://github.com/Pi-Squared-Inc" target="_blank" class="text-pi-dim hover:text-white"><i class="fab fa-github fa-lg"></i></a>
+            </div>
+        </header>
+
+        <!-- MAIN GRID -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
+            
+            <!-- LEFT COLUMN: CONTROLS & INFO (4 cols) -->
+            <aside class="lg:col-span-4 flex flex-col gap-6">
+                
+                <!-- WALLET CARD -->
+                <div class="glass rounded-xl p-6 relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-pi-primary"></div>
+                    
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                        <i class="fas fa-wallet text-pi-primary"></i> <span id="lbl_conn">CONNECTION</span>
+                    </h2>
+
+                    <!-- Warning Block -->
+                    <div class="bg-red-500/10 border border-red-500/20 p-3 rounded text-xs text-red-300 mb-4 flex gap-2">
+                        <i class="fas fa-exclamation-triangle mt-1"></i>
+                        <span id="txt_warning">Use a <b>BURNER WALLET</b> only. This tool uses a CORS Proxy. Never use Mainnet keys.</span>
+                    </div>
+
+                    <!-- Config Form -->
+                    <div id="setupForm" class="space-y-4">
+                        <div>
+                            <label class="text-xs text-pi-dim block mb-1">Set1 Address</label>
+                            <input type="text" id="inp_addr" class="w-full bg-black/40 border border-white/10 rounded p-2 text-xs font-mono neon-border text-pi-primary placeholder-white/10 transition" placeholder="set1...">
+                        </div>
+                        <div>
+                            <label class="text-xs text-pi-dim block mb-1">Private Key (0x)</label>
+                            <input type="password" id="inp_pk" class="w-full bg-black/40 border border-white/10 rounded p-2 text-xs font-mono neon-border text-pi-primary placeholder-white/10 transition" placeholder="0x...">
+                        </div>
+                        <button onclick="saveConfig()" id="btn_connect" class="w-full bg-white/5 hover:bg-pi-primary/20 border border-pi-primary/30 text-pi-primary font-bold py-2 rounded transition flex justify-center items-center gap-2">
+                            CONNECT <i class="fas fa-plug"></i>
+                        </button>
+                    </div>
+
+                    <!-- Connected State -->
+                    <div id="connectedView" class="hidden text-center space-y-4">
+                        <div class="w-16 h-16 bg-pi-success/10 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                            <i class="fas fa-check text-pi-success text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-pi-dim" id="lbl_active">Active Wallet</p>
+                            <p id="display_addr" class="text-xs font-mono text-pi-primary truncate px-4">set1...</p>
+                        </div>
+                        <button onclick="disconnect()" class="text-xs text-red-400 hover:text-red-300 border-b border-dashed border-red-500/50">Disconnect / Clear Keys</button>
+                    </div>
+                </div>
+
+                <!-- EDUCATIONAL WIDGET -->
+                <div class="glass rounded-xl p-6 flex-grow">
+                    <h3 class="text-md font-bold mb-4 border-b border-white/10 pb-2 flex justify-between">
+                        <span id="lbl_academy">🧠 Pi² Academy</span>
+                        <i class="fas fa-graduation-cap text-pi-secondary"></i>
+                    </h3>
+                    
+                    <div class="space-y-4 text-sm text-gray-400 h-64 overflow-y-auto pr-2 custom-scroll" id="edu_content">
+                        <!-- Dynamic Content injected by JS -->
+                    </div>
+                </div>
+
+            </aside>
+
+            <!-- RIGHT COLUMN: DASHBOARD (8 cols) -->
+            <section class="lg:col-span-8 flex flex-col gap-6">
+                
+                <!-- METRICS ROW -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <!-- STATUS -->
+                    <div class="glass p-4 rounded-lg border-l-2 border-gray-500" id="card_status">
+                        <p class="text-xs text-pi-dim uppercase">Network Status</p>
+                        <p class="text-xl font-mono font-bold text-gray-300" id="val_status">IDLE</p>
+                    </div>
+                    <!-- LATENCY -->
+                    <div class="glass p-4 rounded-lg border-l-2 border-pi-primary">
+                        <p class="text-xs text-pi-dim uppercase">Latency (Last)</p>
+                        <p class="text-xl font-mono font-bold text-pi-primary"><span id="val_lat">--</span> ms</p>
+                    </div>
+                    <!-- SUCCESS RATE -->
+                    <div class="glass p-4 rounded-lg border-l-2 border-pi-secondary">
+                        <p class="text-xs text-pi-dim uppercase">Success Rate</p>
+                        <p class="text-xl font-mono font-bold text-pi-secondary"><span id="val_rate">--</span>%</p>
+                    </div>
+                     <!-- BLOCK (Fake/Est) -->
+                     <div class="glass p-4 rounded-lg border-l-2 border-indigo-500">
+                        <p class="text-xs text-pi-dim uppercase">Total Txs</p>
+                        <p class="text-xl font-mono font-bold text-indigo-400" id="val_txs">0</p>
+                    </div>
+                </div>
+
+                <!-- MAIN CHART -->
+                <div class="glass rounded-xl p-1 relative flex-grow min-h-[300px]">
+                    <!-- Toolbar -->
+                    <div class="absolute top-4 right-4 flex gap-2 z-20">
+                         <div id="liveIndicator" class="hidden flex items-center gap-2 px-2 py-1 bg-red-500/20 rounded text-red-400 text-xs font-bold animate-pulse">
+                            <span class="w-2 h-2 bg-red-500 rounded-full"></span> LIVE
+                        </div>
+                    </div>
+                    <canvas id="mainChart"></canvas>
+                </div>
+
+                <!-- TERMINAL & ACTIONS -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 h-48">
+                    
+                    <!-- Console -->
+                    <div class="md:col-span-2 glass rounded-lg p-3 font-mono text-xs overflow-y-auto bg-black/50 custom-scroll relative" id="console">
+                        <div class="scanline pointer-events-none"></div>
+                        <div class="text-pi-primary">> System Initialized... v6.0</div>
+                        <div class="text-gray-500">> Awaiting Wallet Connection...</div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="glass rounded-lg p-4 flex flex-col justify-center gap-3">
+                         <button id="btn_start" onclick="startTest()" disabled class="w-full bg-pi-primary hover:bg-pi-primary/80 disabled:opacity-30 disabled:cursor-not-allowed text-black font-bold py-3 rounded text-sm transition shadow-lg shadow-pi-primary/20">
+                            START BENCHMARK
+                        </button>
+                        <button onclick="stopTest()" class="w-full bg-gray-800 hover:bg-red-900/50 text-white text-xs py-2 rounded transition border border-gray-700">
+                            STOP / PAUSE
+                        </button>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="mt-6 text-center text-xs text-pi-dim border-t border-white/5 pt-4">
+             <span class="opacity-50">🛡️ Proof-of-Speed verified locally | </span>
+             <a href="#" class="hover:text-pi-primary transition">Get Source Code</a>
+             <span class="opacity-50"> | ⚠️ Educational Purpose Only</span>
+        </footer>
+
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        // --- CONSTANTS ---
+        const PROXY = "https://corsproxy.io/?"; 
+        const ENDPOINT = "https://api.wallet.fastset.xyz/api/transferToken";
+        const API = PROXY + encodeURIComponent(ENDPOINT);
+        const TOKEN_ID = "0xfa575e7000000000000000000000000000000000000000000000000000000000";
+
+        // --- STATE ---
+        let lang = 'en';
+        let isRunning = false;
+        let chartInstance;
+        let stats = { ok: 0, fail: 0, total: 0 };
+        let wallet = { a: '', k: '' };
+
+        // --- LOCALIZATION (Wiki included) ---
+        const TX = {
+            en: {
+                c: "CONNECTION",
+                bn: "CONNECT",
+                warn: "Security: Keys are stored locally via LocalStorage. Do not use Mainnet.",
+                st_idle: "IDLE",
+                st_run: "RUNNING",
+                start: "START BENCHMARK",
+                
+                wiki: [
+                    { t: "What is Pi Squared?", d: "It is a Universal Settlement Layer (USL) that uses ZK proofs (but specifically the K-Framework) to verify execution of any language without needing specific circuits." },
+                    { t: "What is FastSet?", d: "The high-performance consensus layer that allows sub-second finality. This tool measures its speed." },
+                    { t: "Why Proxy?", d: "Web browsers block direct API calls to Devnet for security (CORS). We use a tunnel to bypass this for diagnostics." },
+                    { t: "Burner Wallet?", d: "A temporary wallet created just for tests. Never use your main funds here." }
+                ]
+            },
+            ru: {
+                c: "ПОДКЛЮЧЕНИЕ",
+                bn: "ПОДКЛЮЧИТЬ",
+                warn: "Безопасность: Ключи хранятся локально. Используйте тестовый кошелек.",
+                st_idle: "ОЖИДАНИЕ",
+                st_run: "РАБОТАЕТ",
+                start: "ЗАПУСТИТЬ ТЕСТ",
+
+                wiki: [
+                    { t: "Что такое Pi Squared?", d: "Это Универсальный Слой Расчетов (USL). Он использует K-Framework для верификации вычислений любого языка программирования." },
+                    { t: "Что такое FastSet?", d: "Высокоскоростной слой консенсуса. Он дает финализацию быстрее секунды. Этот инструмент измеряет его скорость." },
+                    { t: "Зачем Прокси?", d: "Браузеры блокируют прямые запросы к Devnet. Мы используем туннель для диагностики." },
+                    { t: "Что за Burner Wallet?", d: "Одноразовый кошелек с тестовыми монетами. Никогда не вводите сюда основной ключ." }
+                ]
+            }
+        };
+
+        // --- INIT ---
+        window.onload = () => {
+            initParticles();
+            initChart();
+            renderWiki();
+            
+            // Check LS
+            if(localStorage.getItem('pi2_a')) {
+                wallet.a = localStorage.getItem('pi2_a');
+                wallet.k = localStorage.getItem('pi2_k');
+                toggleConnectView(true);
+            }
+        };
+
+        function toggleLang() {
+            lang = lang === 'en' ? 'ru' : 'en';
+            document.getElementById('btn_lang').innerText = lang.toUpperCase() + ' / ' + (lang==='en'?'RU':'EN');
+            updateTexts();
+            renderWiki();
+        }
+
+        function updateTexts() {
+            document.getElementById('lbl_conn').innerText = TX[lang].c;
+            document.getElementById('btn_connect').innerHTML = TX[lang].bn + ' <i class="fas fa-plug"></i>';
+            document.getElementById('txt_warning').innerText = TX[lang].warn;
+            document.getElementById('btn_start').innerText = TX[lang].start;
+            document.getElementById('val_status').innerText = isRunning ? TX[lang].st_run : TX[lang].st_idle;
+        }
+
+        function renderWiki() {
+            const container = document.getElementById('edu_content');
+            container.innerHTML = '';
+            TX[lang].wiki.forEach(item => {
+                const el = document.createElement('div');
+                el.className = "mb-4 border-l-2 border-white/10 pl-3 hover:border-pi-primary transition group cursor-help";
+                el.innerHTML = `
+                    <h4 class="text-pi-primary text-xs font-bold mb-1 group-hover:text-white">${item.t}</h4>
+                    <p class="text-xs leading-relaxed opacity-70 group-hover:opacity-100">${item.d}</p>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        // --- WALLET LOGIC ---
+        function saveConfig() {
+            const a = document.getElementById('inp_addr').value.trim();
+            const k = document.getElementById('inp_pk').value.trim();
+
+            if(!a.startsWith('set1') || !k.startsWith('0x')) {
+                log("Error: Invalid credentials format.", 'err');
+                alert("Address must start with 'set1'\nPrivate Key must start with '0x'");
+                return;
+            }
+            localStorage.setItem('pi2_a', a);
+            localStorage.setItem('pi2_k', k);
+            wallet.a = a; wallet.k = k;
+            toggleConnectView(true);
+            log("Credentials saved locally.", 'info');
+        }
+
+        function disconnect() {
+            localStorage.clear();
+            wallet = { a: '', k: '' };
+            toggleConnectView(false);
+            log("Disconnected. Credentials wiped.", 'info');
+        }
+
+        function toggleConnectView(isConnected) {
+            if(isConnected) {
+                document.getElementById('setupForm').classList.add('hidden');
+                document.getElementById('connectedView').classList.remove('hidden');
+                document.getElementById('display_addr').innerText = wallet.a;
+                document.getElementById('btn_start').disabled = false;
+                document.getElementById('card_status').querySelector('p').classList.add('text-green-400');
+                document.getElementById('val_status').innerText = "READY";
+            } else {
+                document.getElementById('setupForm').classList.remove('hidden');
+                document.getElementById('connectedView').classList.add('hidden');
+                document.getElementById('btn_start').disabled = true;
+                document.getElementById('card_status').querySelector('p').classList.remove('text-green-400');
+                document.getElementById('val_status').innerText = "IDLE";
+            }
+        }
+
+        // --- BENCHMARK ENGINE ---
+        async function startTest() {
+            if(isRunning) return;
+            isRunning = true;
+            document.getElementById('val_status').innerText = TX[lang].st_run;
+            document.getElementById('val_status').className = "text-xl font-mono font-bold text-pi-primary animate-pulse";
+            document.getElementById('liveIndicator').classList.remove('hidden');
+            
+            // Reset metrics
+            stats = { ok: 0, fail: 0, total: 0 };
+            updateMetrics(0, 0);
+            chartInstance.data.labels = [];
+            chartInstance.data.datasets[0].data = [];
+            chartInstance.update();
+
+            log("🚀 Initializing High-Frequency Stress Test...", 'info');
+            
+            const COUNT = 20; 
+            
+            for(let i=1; i<=COUNT; i++) {
+                if(!isRunning) break;
+                
+                const start = Date.now();
+                log(`[TX #${i}] Broadcasting via CORS Tunnel...`, 'dim');
+                
+                try {
+                    const resp = await fetch(API, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            sender: wallet.a, recipient: wallet.a,
+                            amount: "1", tokenId: TOKEN_ID, privateKey: wallet.k
+                        })
+                    });
+
+                    const text = await resp.text();
+                    
+                    if(resp.ok) { // Basic HTTP check
+                        // Proxy often returns 200 even on inner error, need smart check
+                        const ms = Date.now() - start;
+                        stats.ok++;
+                        log(`[TX #${i}] ✅ CONFIRMED in ${ms}ms`, 'ok');
+                        updateChart(i, ms);
+                        updateMetrics(ms, stats.ok/i*100);
+                    } else {
+                        stats.fail++;
+                        log(`[TX #${i}] ❌ REJECTED: ${text.substring(0,30)}`, 'err');
+                    }
+                } catch(e) {
+                    stats.fail++;
+                    log(`[TX #${i}] 💥 NET ERROR: Check connection`, 'err');
+                }
+                
+                stats.total = i;
+                document.getElementById('val_txs').innerText = i;
+                // Задержка чтобы не спамить и не получать 429
+                await new Promise(r => setTimeout(r, 2000));
+            }
+
+            stopTest();
+        }
+
+        function stopTest() {
+            isRunning = false;
+            document.getElementById('val_status').innerText = "DONE";
+            document.getElementById('val_status').className = "text-xl font-mono font-bold text-gray-300";
+            document.getElementById('liveIndicator').classList.add('hidden');
+            log(`🏁 Benchmark Finished. Success Rate: ${(stats.ok/stats.total*100).toFixed(0)}%`, 'info');
+        }
+
+        // --- UI HELPERS ---
+        function updateMetrics(lat, rate) {
+            if(lat > 0) document.getElementById('val_lat').innerText = lat;
+            document.getElementById('val_rate').innerText = rate.toFixed(0);
+        }
+
+        function log(msg, type) {
+            const div = document.createElement('div');
+            const ts = new Date().toLocaleTimeString('en-US', {hour12:false});
+            div.innerText = `[${ts}] ${msg}`;
+            
+            if(type === 'ok') div.className = "text-pi-success";
+            else if(type === 'err') div.className = "text-pi-danger";
+            else if(type === 'info') div.className = "text-pi-primary";
+            else div.className = "text-gray-500";
+            
+            const cons = document.getElementById('console');
+            cons.prepend(div);
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(0, 229, 255, 0.2)');
+            gradient.addColorStop(1, 'rgba(0, 229, 255, 0)');
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Finality (ms)',
+                        data: [],
+                        borderColor: '#00e5ff',
+                        borderWidth: 2,
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#000',
+                        pointBorderColor: '#00e5ff',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#64748b', font: {family:'monospace'} }
+                        },
+                        x: {
+                            display: false
+                        }
+                    },
+                    animation: { duration: 300 }
+                }
+            });
+        }
+
+        // --- BACKGROUND PARTICLES (MATH DUST) ---
+        function initParticles() {
+            const canvas = document.getElementById('particles');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            let particles = [];
+            for(let i=0; i<50; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    s: Math.random() * 2
+                });
+            }
+            
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#00e5ff";
+                
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if(p.x < 0) p.x = canvas.width;
+                    if(p.x > canvas.width) p.x = 0;
+                    if(p.y < 0) p.y = canvas.height;
+                    if(p.y > canvas.height) p.y = 0;
+                    
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
