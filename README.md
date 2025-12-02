@@ -1,103 +1,85 @@
-# 🛡️ Pi² Sentinel | Universal Settlement Monitor
+# 🛡️ Pi² Sentinel | Universal Settlement Verifier
 
-![License](https://img.shields.io/badge/license-MIT-blue) ![Version](https://img.shields.io/badge/version-v29.0-cyan) ![Network](https://img.shields.io/badge/network-Pi2_Devnet-green) ![Tech](https://img.shields.io/badge/tech-HTML5%20%7C%20JS%20%7C%20Web3-purple)
+![Version](https://img.shields.io/badge/version-v29.0-00f3ff?style=for-the-badge)
+![Status](https://img.shields.io/badge/status-STABLE-10b981?style=for-the-badge)
+![Network](https://img.shields.io/badge/network-Pi2_Devnet-a855f7?style=for-the-badge)
 
-> **The advanced diagnostic instrument for the Pi Squared Universal Settlement Layer.**  
-> Visualize **FastSet™** consensus performance, verify **Proof-of-Proof** integrity, and generate professional audit reports.
+**A professional-grade diagnostic dashboard designed to audit and benchmark the Pi Squared (Pi2) network's FastSet™ consensus layer in real-time.**
 
-## Dashboard Preview
+Sentinel acts as a client-side observatory, visualizing the "Proof-of-Proof" lifecycle—from transaction initiation to sub-second finality. It features a fail-safe architecture, deep metrics analysis (Latency, Jitter), and automated reporting.
 
-<img width="1242" height="878" alt="screenshot png" src="https://github.com/user-attachments/assets/b3879256-0b97-4d82-a23c-5d94f0d679e8" />
-
-## ⚡ What is Sentinel?
-
-Sentinel is a client-side diagnostic tool built for the **Pi Squared community**. It connects to the Devnet to benchmark the efficiency of the **Universal Settlement Layer (USL)**.
-
-Unlike standard explorers, Sentinel provides a "Hacker-style" deep dive into network performance:
-*   **Latency & Jitter Analysis:** Measures the real-world stability of the connection.
-*   **Pipeline Visualization:** Tracks the transaction lifecycle (Init -> Proxy -> USL Verification -> Finality).
-*   **Smart Auditing:** Generates a comprehensive text report comparing Pi2 performance against legacy chains like Ethereum.
+<img width="1242" height="878" alt="screenshot png" src="https://github.com/user-attachments/assets/64167695-3112-4459-8705-6f29a84dc54f" />
 
 ---
 
-## 🚀 Key Features (v29.0)
-
-### 🧠 The "Analyst" Engine
-- **Automated Reporting:** At the end of a benchmark, the system generates a unique **Audit Dossier**.
-- **Grade System:** Automatically grades the network connection (S/A/B/C) based on responsiveness and stability.
-- **Fail-Safe Mode:** If public CORS gateways fail (HTTP 429/500), the system seamlessly switches to mathematical simulation mode to ensure the UI never freezes.
-
-### 🌐 Architecture Visualizer
-- **Real-Time Pipeline:** Watch your transaction propagate from your local signer, through the gateway tunnel, to the FastSet Consensus layer.
-- **Micro-Metrics:** Tracks block production down to the millisecond.
-
-### 🛡️ Security First
-- **Client-Side Only:** No backend server. Your keys **never** leave your browser.
-- **Memory Execution:** Private keys are processed in RAM and cleared on session termination.
-- **Burner Friendly:** Explicit warnings to use Testnet Burner Wallets only.
-
----
-
-## 🛠️ Installation & Usage
-
-You don't need Node.js or complicated builds. Sentinel is a standalone "Single File App".
+## 🚀 How to Run
 
 ### Option A: GitHub Pages (Recommended)
-Simply navigate to the deployed link (replace with your repo link):
-> **[👉 Launch Live Dashboard](https://glaszer.github.io/pi2-sentinel-dashboard/)**
+No installation required. Simply navigate to the deployed link to start the diagnostic tool:
+
+[👉 **LAUNCH LIVE DASHBOARD**](https://glaszer.github.io/pi2-sentinel-dashboard/)
+
 
 ### Option B: Local Execution
-1. **Clone the repo:**
-   ```bash
-   git clone https://github.com/your-username/pi2-sentinel.git
-   cd pi2-sentinel
+1. Clone this repository.
+2. Open `index.html` in any modern web browser (Chrome/Brave/Edge).
+3. Ensure you have an active internet connection for Proxy bridging.
 
-## Run:
+---
 
-Simply open index.html in your browser.
-(Note: For best performance, use VS Code "Live Server" extension to avoid local file CORS restrictions).
+## ⚡ Key Features
 
-📖 How to Run a Benchmark
+### 🖥️ High-Fidelity UX (Cyberdeck Interface)
+*   **Immersive HUD:** A futuristic, responsive interface featuring glassmorphism, animated pipelines, and scanline effects inspired by high-end monitoring tools.
+*   **Real-time Visualization:** Dynamic charts rendering execution metrics powered by `Chart.js`.
+*   **Multilingual Support:** Instant toggle between English and Russian (EN/RU).
 
-Get Credentials: Create a Burner Wallet (Testnet Only). Do not use your main funds.
+### 🔍 Advanced Network Auditing ("The Analyst" Engine)
+*   **Metrics Triangulation:** Measures **Mean Latency** (RTT), **Network Jitter** (stability variance), and **Throughput success rates**.
+*   **Intelligent Routing:** Automatically rotates between CORS Proxies (`corsproxy.io`) to bypass browser restrictions.
+*   **Fail-Safe Protocol:** If public gateways are throttled, the system seamlessly switches to a mathematically accurate simulation mode to demonstrate UI flows without crashing.
 
-Initialize: Enter your set1... address and Private Key. Click Init Session.
+### 📄 Comprehensive Reporting
+*   **Auto-Generated Dossiers:** At the end of a session, the system compiles a detailed **Audit Report** analyzing performance grades (S, A, B, C).
+*   **Context-Aware Analysis:** The report explains metrics in the context of Pi2's architecture (comparing results against Ethereum and Solana benchmarks).
+*   **CSV Export:** One-click data export for community research.
 
-Engage: Click START.
+---
 
-The system will broadcast 20 test transactions.
+## 🧠 Architectural Insights (Why this tool exists)
 
-Watch the Knowledge Feed on the right for educational info about K-Framework and USL.
+Pi Squared is not just another blockchain; it is a **Universal Settlement Layer (USL)**. Sentinel helps visualize how Pi2 achieves scalability:
 
-Review Report: Once finished, the "Audit Report" will slide out.
+1.  **FastSet Consensus:** By separating transaction ordering from execution, Pi2 achieves theoretical sub-second finality. Sentinel measures this propagation delay.
+2.  **Proof-of-Proof:** Instead of re-executing heavy smart contracts, Pi2 verifies a recursive ZK-proof of correctness.
+3.  **K-Framework Integrity:** The tool acts as a visual frontend for the formal verification guarantees provided by the underlying K-Framework semantics.
 
-Export: Click DOWNLOAD DATA to save the logs as a CSV file for proof-of-work.
+---
 
-🏗️ Tech Stack & Architecture
+## 🔒 Security & Privacy
 
-Core: Vanilla JavaScript (ES6+) for maximum compatibility.
+> [!IMPORTANT]
+> **Use strictly for Devnet diagnostics.**
 
-UI Framework: TailwindCSS (CDN) for the futuristic HUD aesthetic.
+*   **Client-Side Execution:** All logic runs locally. Your private keys **never** leave your device except to sign the specific transaction sent to the RPC endpoint.
+*   **Burner Wallet Mandate:** Do not use mainnet keys holding real value. Create a temporary account for testing purposes.
+*   **Open Source:** The code is transparent. You can inspect `index.html` to verify there are no hidden backdoors or analytics trackers.
 
-Networking: Smart Proxy Rotation logic to bypass CORS limitations on the Devnet API.
+---
 
-Math: Chart.js for real-time latency visualization.
+## 🏗️ Technical Stack
 
-Understanding the Metrics
+*   **Core:** Vanilla JavaScript (ES6+) for maximum performance and zero dependencies.
+*   **Styling:** TailwindCSS (via CDN) for the utility-first, dark-mode design.
+*   **Visuals:** Chart.js for data plotting.
+*   **Fonts:** JetBrains Mono & Rajdhani (Google Fonts) for that specialized engineer aesthetic.
 
-Latency: The Round-Trip Time (RTT) including the HTTP Proxy overhead. Direct node connection on Mainnet will be significantly faster (est. <200ms).
+---
 
-Jitter: The variance in latency. High jitter indicates congestion at the public gateway, not the Pi2 chain itself.
+## 👨‍💻 Contributing
 
-⚠️ Disclaimer
+Built for the **Pi Squared Community**.
+Feedback and pull requests are welcome to improve the routing logic or add new metrics!
 
-This is a community-built tool for educational and testing purposes only.
-
-It is not an official product of Pi Squared Inc.
-
-Never enter private keys for wallets holding real value.
-
-Use on Testnet/Devnet environments only.
-
-Built by Microcutsd for the Pi2 Community.
-Verifying the Mathematical Truth, one block at a time.
+**Created by MicrocutsD**
+*Universal Settlement Layer Advocate*
